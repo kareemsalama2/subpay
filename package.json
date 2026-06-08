@@ -1,0 +1,12 @@
+{
+  "name": "subpay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

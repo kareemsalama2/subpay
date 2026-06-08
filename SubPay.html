@@ -1,0 +1,2934 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>SubPay</title>
+  <style>
+/* ===== SubPay Design System ===== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root {
+  /* Color Palette */
+  --primary: #2D3A8C;
+  --primary-dark: #1e2869;
+  --primary-light: #4a5bbc;
+  --primary-soft: #eef0fb;
+  --accent: #4F46E5;
+  --accent-glow: rgba(79,70,229,0.15);
+
+  --success: #10b981;
+  --success-soft: #d1fae5;
+  --warning: #f59e0b;
+  --warning-soft: #fef3c7;
+  --danger: #ef4444;
+  --danger-soft: #fee2e2;
+
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --border: #e5e7f0;
+  --border-light: #f0f1f8;
+
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-inverse: #ffffff;
+
+  /* Typography */
+  --font-main: 'Cairo', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Spacing */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(45,58,140,0.08);
+  --shadow-md: 0 4px 16px rgba(45,58,140,0.10);
+  --shadow-lg: 0 8px 32px rgba(45,58,140,0.14);
+  --shadow-card: 0 2px 8px rgba(45,58,140,0.07);
+
+  /* Nav */
+  --nav-height: 64px;
+  --header-height: 60px;
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text-primary);
+  direction: rtl;
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== App Shell ===== */
+#app {
+  max-width: 430px;
+  min-width: 320px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== Screens ===== */
+.screen {
+  display: none;
+  min-height: 100vh;
+  flex-direction: column;
+  position: relative;
+}
+.screen.active {
+  display: flex;
+}
+.screen.has-nav {
+  padding-bottom: calc(var(--nav-height) + 8px);
+}
+
+/* ===== Splash Screen ===== */
+#screen-splash {
+  background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 50%, var(--accent) 100%);
+  align-items: center;
+  justify-content: center;
+  gap: var(--s6);
+}
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.splash-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+}
+.splash-circle-1 { width: 280px; height: 280px; top: -80px; left: -80px; }
+.splash-circle-2 { width: 180px; height: 180px; bottom: 60px; right: -50px; }
+.splash-circle-3 { width: 120px; height: 120px; top: 50%; right: 20px; transform: translateY(-50%); }
+
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  z-index: 1;
+  animation: splashIn 0.8s cubic-bezier(.34,1.56,.64,1) both;
+}
+.splash-icon {
+  width: 88px;
+  height: 88px;
+  background: rgba(255,255,255,0.15);
+  border-radius: var(--r-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.splash-icon svg { width: 48px; height: 48px; }
+.splash-name {
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.splash-name span { color: rgba(255,255,255,0.6); font-weight: 300; }
+.splash-tagline {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+  z-index: 1;
+}
+.splash-loader {
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  margin-top: var(--s4);
+}
+.splash-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+.splash-dot:nth-child(2) { animation-delay: 0.2s; }
+.splash-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ===== Auth Screens ===== */
+.auth-screen {
+  background: var(--bg);
+}
+.auth-header {
+  background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 100%);
+  padding: var(--s10) var(--s6) var(--s8);
+  position: relative;
+  overflow: hidden;
+}
+.auth-header-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.auth-header-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.auth-header-circle-1 { width: 160px; height: 160px; top: -50px; left: -40px; }
+.auth-header-circle-2 { width: 100px; height: 100px; bottom: -20px; right: 20px; }
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+  position: relative;
+  z-index: 1;
+}
+.auth-logo-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.15);
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.auth-logo-icon svg { width: 22px; height: 22px; }
+.auth-logo-name { font-size: 20px; font-weight: 800; color: #fff; }
+.auth-title { font-size: 24px; font-weight: 700; color: #fff; position: relative; z-index: 1; }
+.auth-subtitle { font-size: 14px; color: rgba(255,255,255,0.65); position: relative; z-index: 1; margin-top: 4px; }
+
+.auth-body {
+  padding: var(--s6);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+/* ===== Form Elements ===== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.input-wrap {
+  position: relative;
+}
+.input-wrap .input-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 14px;
+  color: var(--text-muted);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+.input-wrap .input-action {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  background: none;
+  border: none;
+}
+.input-wrap .input-action:hover { color: var(--primary); }
+
+.form-input {
+  width: 100%;
+  height: 52px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0 var(--s10) 0 var(--s4);
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  text-align: right;
+}
+.form-input.ltr {
+  direction: ltr;
+  text-align: left;
+  padding: 0 var(--s4) 0 var(--s10);
+}
+.form-input.ltr ~ .input-icon { right: auto; left: 14px; }
+.form-input.has-action { padding-left: var(--s10); }
+
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-input::placeholder { color: var(--text-muted); }
+.form-input.error { border-color: var(--danger); }
+.form-input.error:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+
+.form-error {
+  font-size: 12px;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 52px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.15s;
+}
+.btn:active::after { background: rgba(255,255,255,0.1); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+}
+.btn-primary:hover { box-shadow: 0 6px 20px rgba(79,70,229,0.45); transform: translateY(-1px); }
+.btn-primary:disabled { background: var(--border); color: var(--text-muted); box-shadow: none; transform: none; cursor: not-allowed; }
+
+.btn-outline {
+  background: var(--surface);
+  color: var(--primary);
+  border: 1.5px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--primary); background: var(--primary-soft); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--primary);
+  height: auto;
+  padding: var(--s2) var(--s3);
+  font-size: 13px;
+}
+.btn-ghost:hover { background: var(--primary-soft); border-radius: var(--r-sm); }
+
+.btn-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1.5px solid transparent;
+}
+.btn-danger:hover { background: var(--danger); color: #fff; }
+
+.btn-google {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+  font-weight: 600;
+}
+.btn-google:hover { border-color: #4285F4; }
+.btn-google-icon { width: 20px; height: 20px; }
+
+.btn-sm { height: 36px; font-size: 13px; padding: 0 var(--s4); width: auto; border-radius: 6px; }
+.btn-xs { height: 28px; font-size: 12px; padding: 0 var(--s3); width: auto; border-radius: 6px; min-height: 28px; }
+
+/* Loading spinner in btn */
+.btn-loading {
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::before {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding-top: var(--s2);
+}
+.auth-footer a, .link {
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.auth-footer a:hover, .link:hover { text-decoration: underline; }
+
+/* ===== Top Header (inner screens) ===== */
+.top-header {
+  height: var(--header-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s4);
+  gap: var(--s3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.top-header .back-btn {
+  width: 40px; height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+.top-header .back-btn:hover { background: var(--border); }
+.top-header .header-title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+.top-header .header-action {
+  width: 40px; height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* ===== Bottom Navigation ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: var(--nav-height);
+  background: var(--surface);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 var(--s2);
+  z-index: 200;
+  box-shadow: 0 -4px 16px rgba(45,58,140,0.08);
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: var(--s2) var(--s4);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: all 0.2s;
+  min-width: 60px;
+  min-height: 44px;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+}
+.nav-item.active { color: var(--primary); }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item span { font-size: 11px; font-weight: 600; }
+.nav-item.active span { color: var(--primary); }
+.nav-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-top: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.nav-item.active .nav-dot { opacity: 1; }
+
+/* ===== Home Screen ===== */
+.home-header {
+  background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 100%);
+  padding: var(--s6) var(--s5) var(--s8);
+  position: relative;
+  overflow: hidden;
+}
+.home-header-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.home-header-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+}
+.home-header-circle-1 { width: 200px; height: 200px; top: -60px; left: -60px; }
+.home-header-circle-2 { width: 120px; height: 120px; bottom: -30px; right: -20px; }
+
+.home-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s5);
+  position: relative; z-index: 1;
+}
+.home-greeting { font-size: 13px; color: rgba(255,255,255,0.65); }
+.home-user-name { font-size: 20px; font-weight: 700; color: #fff; }
+.home-notif-btn {
+  width: 42px; height: 42px;
+  background: rgba(255,255,255,0.12);
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  position: relative;
+}
+.notif-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  width: 10px; height: 10px;
+  background: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+}
+
+.home-stats {
+  display: flex;
+  gap: var(--s3);
+  position: relative; z-index: 1;
+}
+.stat-card {
+  flex: 1;
+  background: rgba(255,255,255,0.12);
+  border-radius: var(--r-md);
+  padding: var(--s3) var(--s4);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.stat-value { font-size: 22px; font-weight: 800; color: #fff; line-height: 1; }
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 3px; }
+
+.home-body { padding: var(--s5); flex: 1; }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s4);
+}
+.section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+
+/* ===== Room Cards ===== */
+.room-card {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+.room-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.room-card:active { transform: scale(0.99); }
+
+.room-icon {
+  width: 52px; height: 52px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  position: relative;
+}
+.room-icon.chatgpt { background: #10a37f1a; }
+.room-icon.netflix { background: #e501001a; }
+.room-icon.default { background: var(--primary-soft); }
+
+.room-info { flex: 1; min-width: 0; }
+.room-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.room-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.room-arrow { color: var(--text-muted); flex-shrink: 0; }
+
+/* ===== Badges ===== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-danger { background: var(--danger-soft); color: var(--danger); }
+.badge-primary { background: var(--primary-soft); color: var(--primary); }
+.badge-muted { background: var(--border); color: var(--text-secondary); }
+
+/* ===== Join Room ===== */
+.join-room-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--s6);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+}
+.join-room-icon {
+  width: 72px; height: 72px;
+  background: var(--primary-soft);
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto var(--s4);
+}
+.join-room-icon svg { width: 36px; height: 36px; color: var(--primary); }
+.join-room-title { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: var(--s2); }
+.join-room-subtitle { text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s6); }
+
+/* ===== Room Details ===== */
+.room-detail-header {
+  background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 100%);
+  padding: var(--s6) var(--s5) var(--s8);
+  position: relative;
+  overflow: hidden;
+}
+.room-detail-header .back-btn {
+  width: 40px; height: 40px;
+  border-radius: var(--r-sm);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  margin-bottom: var(--s4);
+}
+.room-detail-icon {
+  width: 64px; height: 64px;
+  background: rgba(255,255,255,0.15);
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  margin-bottom: var(--s3);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.room-detail-name { font-size: 22px; font-weight: 800; color: #fff; }
+.room-detail-meta { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; }
+
+/* ===== Tabs ===== */
+.tabs-bar {
+  background: var(--surface);
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.tab-item {
+  flex: 1;
+  padding: var(--s3) var(--s2);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+}
+.tab-item.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-panel { display: none; padding: var(--s4); }
+.tab-panel.active { display: block; }
+
+/* ===== OTP Card ===== */
+.otp-card {
+  background: linear-gradient(135deg, var(--primary-soft) 0%, #e8eaf8 100%);
+  border-radius: var(--r-md);
+  padding: var(--s5);
+  border: 1px solid var(--primary-soft);
+  margin-bottom: var(--s4);
+}
+.otp-label { font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: var(--s3); }
+.otp-code {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  letter-spacing: 6px;
+  line-height: 1;
+  margin-bottom: var(--s3);
+  direction: ltr;
+  text-align: center;
+}
+.otp-timer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.otp-timer-progress {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  margin: 0 var(--s3);
+}
+.otp-timer-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--r-full);
+  transition: width 1s linear;
+}
+
+/* ===== Info Card ===== */
+.info-card {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.info-row:last-child { border-bottom: none; }
+.info-key { font-size: 13px; color: var(--text-secondary); }
+.info-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.info-val.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  direction: ltr;
+  letter-spacing: 1px;
+}
+.info-val.blurred { filter: blur(4px); user-select: none; }
+.toggle-vis {
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 2px;
+  line-height: 0;
+}
+.toggle-vis:hover { color: var(--primary); }
+
+/* ===== Warning Banner ===== */
+.warning-banner {
+  background: var(--warning-soft);
+  border: 1px solid #fcd34d;
+  border-radius: var(--r-sm);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  font-size: 12px;
+  color: #92400e;
+  margin-bottom: var(--s4);
+}
+.warning-banner svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ===== Unpaid / Locked ===== */
+.locked-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s8) var(--s6);
+  gap: var(--s4);
+  text-align: center;
+}
+.locked-icon {
+  width: 88px; height: 88px;
+  background: var(--danger-soft);
+  border-radius: var(--r-xl);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: var(--s2);
+}
+.locked-icon svg { width: 44px; height: 44px; color: var(--danger); }
+.locked-title { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.locked-reason { font-size: 14px; color: var(--text-secondary); max-width: 280px; }
+.locked-amount { font-size: 28px; font-weight: 900; color: var(--primary); }
+.locked-amount span { font-size: 16px; font-weight: 500; color: var(--text-secondary); }
+
+/* ===== Payment ===== */
+.payment-methods { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s5); }
+.payment-method {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.payment-method.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.payment-method-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.payment-method-info { flex: 1; }
+.payment-method-name { font-size: 15px; font-weight: 700; }
+.payment-method-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.payment-check {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.payment-method.selected .payment-check {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.payment-summary {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  margin-bottom: var(--s5);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+.payment-summary .info-row { padding: var(--s2) 0; }
+.payment-total { font-size: 18px; font-weight: 800; color: var(--primary); }
+
+/* ===== Members ===== */
+.member-item {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+  border: 1px solid var(--border-light);
+}
+.member-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-size: 14px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.member-email { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: right; }
+.member-actions { display: flex; gap: var(--s2); align-items: center; }
+
+/* ===== Profile ===== */
+.profile-header-card {
+  background: linear-gradient(145deg, var(--primary-dark) 0%, var(--primary) 100%);
+  margin: var(--s4);
+  border-radius: var(--r-lg);
+  padding: var(--s6);
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  position: relative;
+  overflow: hidden;
+}
+.profile-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.profile-name { font-size: 18px; font-weight: 700; color: #fff; }
+.profile-email { font-size: 13px; color: rgba(255,255,255,0.65); direction: ltr; }
+
+.profile-menu {
+  padding: 0 var(--s4);
+}
+.menu-group { margin-bottom: var(--s4); }
+.menu-group-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: var(--s2) 0; margin-bottom: var(--s2); }
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s4);
+  background: var(--surface);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  margin-bottom: var(--s2);
+  border: 1px solid var(--border-light);
+  transition: all 0.2s;
+  border: none;
+  width: 100%;
+  text-align: right;
+}
+.menu-item:hover { background: var(--bg); }
+.menu-item-icon {
+  width: 38px; height: 38px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.menu-item-icon.primary { background: var(--primary-soft); color: var(--primary); }
+.menu-item-icon.warning { background: var(--warning-soft); color: var(--warning); }
+.menu-item-icon.danger { background: var(--danger-soft); color: var(--danger); }
+.menu-item-icon.muted { background: var(--bg); color: var(--text-secondary); }
+
+.menu-item-text { flex: 1; }
+.menu-item-label { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.menu-item-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.menu-item-arrow { color: var(--text-muted); }
+
+/* ===== FAQ/About ===== */
+.faq-item {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  margin-bottom: var(--s3);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+.faq-question {
+  padding: var(--s4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  gap: var(--s3);
+}
+.faq-question svg { flex-shrink: 0; transition: transform 0.2s; color: var(--text-muted); }
+.faq-item.open .faq-question svg { transform: rotate(180deg); }
+.faq-answer {
+  display: none;
+  padding: 0 var(--s4) var(--s4);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--s3);
+}
+.faq-item.open .faq-answer { display: block; }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-width: 430px;
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: var(--s4) var(--s6) var(--s8);
+  animation: slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-handle {
+  width: 40px; height: 4px;
+  background: var(--border);
+  border-radius: var(--r-full);
+  margin: 0 auto var(--s5);
+}
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: var(--s5); }
+
+/* ===== Toast ===== */
+.toast-container {
+  position: fixed;
+  top: var(--s4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  width: calc(100% - 32px);
+  max-width: 398px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  pointer-events: none;
+}
+.toast {
+  background: var(--text-primary);
+  color: #fff;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.3s ease both;
+  pointer-events: all;
+}
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.warning { background: var(--warning); color: #000; }
+.toast.hide { animation: toastOut 0.3s ease both; }
+.toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ===== Notification Items ===== */
+.notif-item {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  display: flex;
+  gap: var(--s3);
+  border: 1px solid var(--border-light);
+}
+.notif-item.unread { border-right: 3px solid var(--primary); }
+.notif-icon {
+  width: 38px; height: 38px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.notif-content { flex: 1; }
+.notif-title { font-size: 14px; font-weight: 600; }
+.notif-body { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.notif-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* ===== Empty State ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s10) var(--s6);
+  gap: var(--s4);
+  text-align: center;
+}
+.empty-icon {
+  width: 80px; height: 80px;
+  background: var(--primary-soft);
+  border-radius: var(--r-xl);
+  display: flex; align-items: center; justify-content: center;
+}
+.empty-icon svg { width: 40px; height: 40px; color: var(--primary); }
+.empty-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.empty-subtitle { font-size: 14px; color: var(--text-secondary); }
+
+/* ===== Loading Skeleton ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--r-sm);
+}
+
+/* ===== Page Loader ===== */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  background: var(--surface);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--s4);
+}
+.page-loader.hide { display: none; }
+.loader-ring {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ===== Screen content padding ===== */
+.screen-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== Scroll area ===== */
+.scroll-area {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+/* ===== Confirm danger modal ===== */
+.confirm-danger-icon {
+  width: 72px; height: 72px;
+  background: var(--danger-soft);
+  border-radius: var(--r-xl);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto var(--s4);
+}
+.confirm-danger-icon svg { width: 36px; height: 36px; color: var(--danger); }
+
+/* ===== Animations ===== */
+@keyframes splashIn {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-16px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-16px) scale(0.95); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.3s ease both; }
+
+/* ===== Utilities ===== */
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); font-size: 13px; }
+.mt-2 { margin-top: var(--s2); }
+.mt-4 { margin-top: var(--s4); }
+.mt-6 { margin-top: var(--s6); }
+.mb-4 { margin-bottom: var(--s4); }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--s2); }
+.gap-3 { gap: var(--s3); }
+.w-full { width: 100%; }
+.p-4 { padding: var(--s4); }
+.divider { height: 1px; background: var(--border); margin: var(--s4) 0; }
+
+/* ===== Screen-specific scroll fix ===== */
+#screen-home .screen-body,
+#screen-room .screen-body,
+#screen-profile .screen-body,
+#screen-faq .screen-body,
+#screen-notif .screen-body,
+#screen-history .screen-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== Code step indicators ===== */
+.step-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: var(--s4);
+}
+.step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s;
+}
+.step-dot.active { background: var(--primary); width: 24px; border-radius: 4px; }
+.step-dot.done { background: var(--success); }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ===== MODAL: Join Room ===== -->
+  <div class="modal-overlay" id="modal-join">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">انضم لروم</h2>
+      <div class="join-room-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-bottom:20px">أدخل كود الدعوة الذي استلمته من الأدمن</p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">كود الدعوة</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="text" class="form-input ltr" id="join-code-input" placeholder="XXXX-XXXX" maxlength="12">
+        </div>
+        <div class="form-error" id="join-code-error" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="join-code-error-text">كود غير صحيح</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-join-confirm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        انضم الآن
+      </button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-join')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Add Member ===== -->
+  <div class="modal-overlay" id="modal-add-member">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">إضافة عضو</h2>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="form-input ltr" id="add-member-email" placeholder="email@example.com">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-member-confirm">إضافة</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-add-member')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Delete Account ===== -->
+  <div class="modal-overlay" id="modal-delete-account">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="confirm-danger-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      </div>
+      <h2 class="modal-title text-center" style="color:var(--danger)">حذف الحساب</h2>
+      <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-bottom:20px">هذا الإجراء <strong>لا يمكن التراجع عنه</strong>. سيتم حذف جميع بياناتك وإلغاء جميع اشتراكاتك نهائياً.</p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">اكتب "احذف حسابي" للتأكيد</label>
+        <input type="text" class="form-input" id="delete-confirm-input" placeholder="احذف حسابي">
+      </div>
+      <button class="btn" id="btn-delete-confirm" style="background:var(--danger);color:#fff;border:none">حذف الحساب نهائياً</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-delete-account')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Remove Member ===== -->
+  <div class="modal-overlay" id="modal-remove-member">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="confirm-danger-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+      </div>
+      <h2 class="modal-title text-center">إزالة العضو</h2>
+      <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-bottom:20px">هل أنت متأكد من إزالة هذا العضو من الروم؟</p>
+      <button class="btn" id="btn-remove-member-confirm" style="background:var(--danger);color:#fff;border:none">نعم، إزالة</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-remove-member')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Splash ===== -->
+  <div class="screen active" id="screen-splash">
+    <div class="splash-bg">
+      <div class="splash-circle splash-circle-1"></div>
+      <div class="splash-circle splash-circle-2"></div>
+      <div class="splash-circle splash-circle-3"></div>
+    </div>
+    <div class="splash-logo">
+      <div class="splash-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+          <path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+          <path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="splash-name">Sub<span>Pay</span></div>
+    </div>
+    <div class="splash-tagline">إدارة الاشتراكات المشتركة بكل سهولة</div>
+    <div class="splash-loader">
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Login ===== -->
+  <div class="screen auth-screen" id="screen-login">
+    <div class="auth-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)"/>
+            <path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="auth-logo-name">SubPay</span>
+      </div>
+      <h1 class="auth-title">مرحباً بعودتك 👋</h1>
+      <p class="auth-subtitle">سجّل دخولك لإدارة اشتراكاتك</p>
+    </div>
+    <div class="auth-body scroll-area">
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="form-input ltr" id="login-email" placeholder="email@example.com" autocomplete="email">
+        </div>
+        <div class="form-error" id="login-email-error" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-email-error-text"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" class="form-input ltr has-action" id="login-password" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="input-action" onclick="togglePasswordVisibility('login-password')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="form-error" id="login-password-error" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-password-error-text"></span>
+        </div>
+      </div>
+      <div style="text-align:left">
+        <button class="btn-ghost" onclick="navigateTo('screen-forgot')">نسيت كلمة المرور؟</button>
+      </div>
+      <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        تسجيل الدخول
+      </button>
+      <div class="auth-divider">أو</div>
+      <button class="btn btn-google" onclick="handleGoogleLogin()">
+        <svg class="btn-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        المتابعة بحساب Google
+      </button>
+      <div class="auth-footer">
+        ليس لديك حساب؟ <a onclick="navigateTo('screen-register')">إنشاء حساب</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Register ===== -->
+  <div class="screen auth-screen" id="screen-register">
+    <div class="auth-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)"/><path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="auth-logo-name">SubPay</span>
+      </div>
+      <h1 class="auth-title">إنشاء حساب جديد ✨</h1>
+      <p class="auth-subtitle">انضم وابدأ إدارة اشتراكاتك</p>
+    </div>
+    <div class="auth-body scroll-area">
+      <div class="form-group">
+        <label class="form-label">الاسم الكامل</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" class="form-input" id="reg-name" placeholder="محمد أحمد">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الهاتف</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.08 2.18 2 2 0 012.08 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.71-.71a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <input type="tel" class="form-input ltr" id="reg-phone" placeholder="+20 1X XXXX XXXX">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="form-input ltr" id="reg-email" placeholder="email@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" class="form-input ltr has-action" id="reg-password" placeholder="••••••••">
+          <button type="button" class="input-action" onclick="togglePasswordVisibility('reg-password')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-register" onclick="handleRegister()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        إنشاء الحساب
+      </button>
+      <div class="auth-divider">أو</div>
+      <button class="btn btn-google" onclick="handleGoogleLogin()">
+        <svg class="btn-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        التسجيل بحساب Google
+      </button>
+      <div class="auth-footer">
+        لديك حساب بالفعل؟ <a onclick="navigateTo('screen-login')">تسجيل الدخول</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Forgot Password ===== -->
+  <div class="screen auth-screen" id="screen-forgot">
+    <div class="auth-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)"/><path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="auth-logo-name">SubPay</span>
+      </div>
+      <h1 class="auth-title" id="forgot-title">استعادة كلمة المرور 🔑</h1>
+      <p class="auth-subtitle" id="forgot-subtitle">أدخل بريدك لإرسال كود الاستعادة</p>
+    </div>
+    <div class="auth-body scroll-area">
+      <div class="step-dots" id="forgot-steps">
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+      <!-- Step 0: Email -->
+      <div id="forgot-step-0">
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">البريد الإلكتروني</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" class="form-input ltr" id="forgot-email" placeholder="email@example.com">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleForgotSend()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          إرسال الكود
+        </button>
+      </div>
+      <!-- Step 1: Code -->
+      <div id="forgot-step-1" style="display:none">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;text-align:center">أرسلنا كود التحقق إلى بريدك الإلكتروني</p>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">كود التحقق</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="text" class="form-input ltr" id="forgot-code" placeholder="123456" maxlength="6" style="font-size:24px;letter-spacing:8px;text-align:center;padding-right:12px;padding-left:12px">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleForgotVerify()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          تحقق من الكود
+        </button>
+        <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)">لم يصلك الكود؟ <span class="link" onclick="handleForgotSend()">إعادة الإرسال</span></p>
+      </div>
+      <!-- Step 2: New password -->
+      <div id="forgot-step-2" style="display:none">
+        <div class="form-group">
+          <label class="form-label">كلمة المرور الجديدة</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="password" class="form-input ltr has-action" id="forgot-new-pass" placeholder="••••••••">
+            <button type="button" class="input-action" onclick="togglePasswordVisibility('forgot-new-pass')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">تأكيد كلمة المرور</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="password" class="form-input ltr" id="forgot-confirm-pass" placeholder="••••••••">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleResetPassword()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          تأكيد كلمة المرور
+        </button>
+      </div>
+      <div class="auth-footer" style="margin-top:16px">
+        <a onclick="navigateTo('screen-login')">العودة لتسجيل الدخول</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Home ===== -->
+  <div class="screen has-nav" id="screen-home">
+    <div class="home-header">
+      <div class="home-header-bg">
+        <div class="home-header-circle home-header-circle-1"></div>
+        <div class="home-header-circle home-header-circle-2"></div>
+      </div>
+      <div class="home-header-top">
+        <div>
+          <div class="home-greeting">مرحباً 👋</div>
+          <div class="home-user-name" id="home-user-name">محمد أحمد</div>
+        </div>
+        <button class="home-notif-btn" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="notif-badge" id="notif-badge" style="display:none"></div>
+        </button>
+      </div>
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-rooms">0</div>
+          <div class="stat-label">روماتي</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-paid">0</div>
+          <div class="stat-label">مدفوعة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-due">0</div>
+          <div class="stat-label">مستحقة</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-body">
+      <div class="home-body">
+        <div class="section-header">
+          <span class="section-title">روماتي</span>
+          <button class="btn btn-sm btn-primary" onclick="openModal('modal-join')" style="display:flex;align-items:center;gap:4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            انضم لروم
+          </button>
+        </div>
+        <div id="rooms-list"></div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Room Details ===== -->
+  <div class="screen has-nav" id="screen-room">
+    <div class="room-detail-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <button class="back-btn" onclick="navigateTo('screen-home');setActiveNav('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="room-detail-icon" id="room-detail-icon">🤖</div>
+      <div class="room-detail-name" id="room-detail-name">ChatGPT Plus</div>
+      <div class="room-detail-meta" id="room-detail-meta">5 أعضاء · مدفوع</div>
+    </div>
+    <div class="tabs-bar">
+      <button class="tab-item active" onclick="switchTab('room','data')">بيانات الاشتراك</button>
+      <button class="tab-item" onclick="switchTab('room','notifs')">الإشعارات</button>
+      <button class="tab-item" id="tab-members-btn" style="display:none" onclick="switchTab('room','members')">الأعضاء</button>
+    </div>
+    <div class="screen-body">
+      <div class="tab-panel active" id="room-tab-data">
+        <div class="warning-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          الوصول للبيانات الحساسة قد يتم تسجيله لأغراض أمنية.
+        </div>
+        <div class="otp-card" id="otp-card">
+          <div class="otp-label">🔐 كود التحقق الحالي (OTP)</div>
+          <div class="otp-code" id="otp-code">--</div>
+          <div class="otp-timer">
+            <span id="otp-time-left">--</span>
+            <div class="otp-timer-progress">
+              <div class="otp-timer-bar" id="otp-bar" style="width:100%"></div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+        </div>
+        <div class="info-card" id="room-info-card"></div>
+      </div>
+      <div class="tab-panel" id="room-tab-notifs">
+        <div id="room-notifs-list"></div>
+      </div>
+      <div class="tab-panel" id="room-tab-members">
+        <div id="room-members-actions" style="display:none;margin-bottom:12px">
+          <button class="btn btn-outline" style="display:flex;align-items:center;gap:8px" onclick="openModal('modal-add-member')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            إضافة عضو
+          </button>
+        </div>
+        <div id="room-members-list"></div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Unpaid ===== -->
+  <div class="screen" id="screen-unpaid">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-home');setActiveNav('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title" id="unpaid-room-name">ChatGPT Plus</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="locked-screen">
+      <div class="locked-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h2 class="locked-title">الوصول محظور</h2>
+      <p class="locked-reason" id="locked-reason">لم يتم تجديد الاشتراك الشهري. يرجى الدفع للوصول لبيانات الروم.</p>
+      <div class="locked-amount" id="locked-amount">49 <span>جنيه / شهر</span></div>
+      <button class="btn btn-primary" style="max-width:280px" onclick="goToPayment()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        ادفع الآن
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Payment ===== -->
+  <div class="screen" id="screen-payment">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-unpaid')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">الدفع</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div class="payment-summary">
+        <div class="info-row">
+          <span class="info-key">الروم</span>
+          <span class="info-val" id="payment-room-name">ChatGPT Plus</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">الفترة</span>
+          <span class="info-val" id="payment-period">يونيو 2025</span>
+        </div>
+        <div class="info-row" style="border-bottom:none">
+          <span class="info-key">المبلغ</span>
+          <span class="info-val payment-total" id="payment-amount">49 جنيه</span>
+        </div>
+      </div>
+      <div class="section-header" style="margin-bottom:12px">
+        <span class="section-title">طريقة الدفع</span>
+      </div>
+      <div class="payment-methods">
+        <div class="payment-method selected" onclick="selectPaymentMethod(this,'instapay')">
+          <div class="payment-method-icon">⚡</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">InstaPay</div>
+            <div class="payment-method-desc">دفع فوري عبر InstaPay</div>
+          </div>
+          <div class="payment-check">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="payment-method" onclick="selectPaymentMethod(this,'wallet')">
+          <div class="payment-method-icon">👜</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">المحفظة الإلكترونية</div>
+            <div class="payment-method-desc">Vodafone Cash / Orange Cash</div>
+          </div>
+          <div class="payment-check"></div>
+        </div>
+        <div class="payment-method" onclick="selectPaymentMethod(this,'card')">
+          <div class="payment-method-icon">💳</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">بطاقة بنكية</div>
+            <div class="payment-method-desc">Visa / Mastercard</div>
+          </div>
+          <div class="payment-check"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-pay" onclick="handlePayment()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        تأكيد الدفع
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Notifications ===== -->
+  <div class="screen has-nav" id="screen-notif">
+    <div class="top-header">
+      <div style="width:40px"></div>
+      <span class="header-title">الإشعارات</span>
+      <button class="header-action" onclick="markAllRead()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div id="notifs-list"></div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item active" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Profile ===== -->
+  <div class="screen has-nav" id="screen-profile">
+    <div class="top-header">
+      <div style="width:40px"></div>
+      <span class="header-title">حسابي</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body">
+      <div class="profile-header-card">
+        <div class="profile-avatar" id="profile-avatar">م</div>
+        <div>
+          <div class="profile-name" id="profile-name">محمد أحمد</div>
+          <div class="profile-email" id="profile-email">m.ahmed@email.com</div>
+        </div>
+      </div>
+      <div class="profile-menu">
+        <div class="menu-group">
+          <div class="menu-group-title">الحساب</div>
+          <button class="menu-item" onclick="navigateTo('screen-history')">
+            <div class="menu-item-icon primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">سجل المدفوعات</div>
+              <div class="menu-item-sub">عرض جميع المعاملات</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="menu-item" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+            <div class="menu-item-icon primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">الإشعارات</div>
+              <div class="menu-item-sub">إدارة التنبيهات</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">المساعدة</div>
+          <button class="menu-item" onclick="navigateTo('screen-faq')">
+            <div class="menu-item-icon muted">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">الأسئلة الشائعة</div>
+              <div class="menu-item-sub">عن SubPay وكيفية الاستخدام</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">الإجراءات</div>
+          <button class="menu-item" onclick="handleLogout()">
+            <div class="menu-item-icon warning">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">تسجيل الخروج</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="menu-item" onclick="openModal('modal-delete-account')">
+            <div class="menu-item-icon danger">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label" style="color:var(--danger)">حذف الحساب</div>
+              <div class="menu-item-sub">إجراء لا يمكن التراجع عنه</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:12px">
+          SubPay v1.0.0 · جميع الحقوق محفوظة © 2025
+        </div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item active" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Payment History ===== -->
+  <div class="screen" id="screen-history">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-profile')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">سجل المدفوعات</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: FAQ ===== -->
+  <div class="screen" id="screen-faq">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-profile')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">الأسئلة الشائعة</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div style="background:var(--primary-soft);border-radius:var(--r-lg);padding:20px;margin-bottom:20px;text-align:center">
+        <div style="font-size:36px;margin-bottom:8px">💳</div>
+        <div style="font-size:18px;font-weight:800;color:var(--primary)">SubPay</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">منصة إدارة الاشتراكات المشتركة</div>
+      </div>
+      <div id="faq-list"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ===================================================
+// SubPay — App Logic v1.0
+// ===================================================
+
+// ========== State ==========
+const state = {
+  currentUser:          null,
+  rooms:                [],
+  notifications:        [],
+  currentRoom:          null,
+  selectedPaymentMethod:'instapay',
+  otpInterval:          null,
+  memberToRemove:       null,
+  prevScreen:           null,
+};
+
+// ========== Demo Data ==========
+const DEMO_USER = {
+  id: 'u1',
+  name: 'محمد أحمد',
+  email: 'm.ahmed@email.com',
+  phone: '+201012345678',
+  avatar: 'م',
+};
+
+const DEMO_ROOMS = [
+  {
+    id: 'r1',
+    name: 'ChatGPT Plus',
+    icon: '🤖',
+    iconClass: 'chatgpt',
+    service: 'ChatGPT Plus',
+    price: 49,
+    currency: 'جنيه',
+    members: 5,
+    maxMembers: 5,
+    isPaid: true,
+    isAdmin: false,
+    username: 'group_chatgpt@mail.com',
+    password: 'P@ssw0rd!123',
+    renewDate: '1 يوليو 2025',
+    notifications: [
+      { id:'rn1', title:'تم تجديد الاشتراك', body:'تم تجديد ChatGPT Plus للشهر الجاري بنجاح.', time:'منذ يومين', type:'success', unread:false },
+      { id:'rn2', title:'OTP جديد متاح',     body:'كود تحقق جديد أُنشئ. تحقق من تبويب بيانات الاشتراك.', time:'منذ ساعة', type:'info', unread:true },
+    ],
+    membersList: [
+      { id:'m1', name:'أحمد محمود',  email:'ahmed@mail.com',      role:'owner',  paid:true,  avatar:'أ' },
+      { id:'m2', name:'محمد أحمد',   email:'m.ahmed@email.com',   role:'member', paid:true,  avatar:'م' },
+      { id:'m3', name:'سارة خالد',   email:'sara@mail.com',       role:'member', paid:true,  avatar:'س' },
+      { id:'m4', name:'عمر علي',     email:'omar@mail.com',       role:'member', paid:false, avatar:'ع' },
+      { id:'m5', name:'ريم حسن',     email:'reem@mail.com',       role:'member', paid:true,  avatar:'ر' },
+    ],
+  },
+  {
+    id: 'r2',
+    name: 'Netflix',
+    icon: '🎬',
+    iconClass: 'netflix',
+    service: 'Netflix Standard',
+    price: 99,
+    currency: 'جنيه',
+    members: 4,
+    maxMembers: 4,
+    isPaid: false,
+    isAdmin: true,
+    username: 'netflix_group@mail.com',
+    password: 'Netflix#2025!',
+    renewDate: '15 يونيو 2025',
+    notifications: [
+      { id:'rn3', title:'تذكير بالدفع', body:'موعد تجديد Netflix يقترب. يرجى الدفع قبل 15 يونيو لتجنب قطع الخدمة.', time:'منذ 3 أيام', type:'warning', unread:true },
+    ],
+    membersList: [
+      { id:'m6', name:'محمد أحمد',  email:'m.ahmed@email.com', role:'admin',  paid:false, avatar:'م' },
+      { id:'m7', name:'لينا سامي',  email:'lena@mail.com',     role:'member', paid:true,  avatar:'ل' },
+      { id:'m8', name:'خالد يوسف', email:'khaled@mail.com',   role:'member', paid:false, avatar:'خ' },
+      { id:'m9', name:'منى طارق',  email:'mona@mail.com',     role:'member', paid:true,  avatar:'ن' },
+    ],
+  },
+  {
+    id: 'r3',
+    name: 'Spotify',
+    icon: '🎵',
+    iconClass: 'default',
+    service: 'Spotify Premium',
+    price: 35,
+    currency: 'جنيه',
+    members: 3,
+    maxMembers: 6,
+    isPaid: true,
+    isAdmin: false,
+    username: 'spotify_fam@mail.com',
+    password: 'Sp0tify$2025',
+    renewDate: '20 يونيو 2025',
+    notifications: [],
+    membersList: [
+      { id:'m10', name:'يوسف حمدي',  email:'youssef@mail.com', role:'owner',  paid:true, avatar:'ي' },
+      { id:'m11', name:'محمد أحمد',  email:'m.ahmed@email.com',role:'member', paid:true, avatar:'م' },
+      { id:'m12', name:'هدى مصطفى', email:'hoda@mail.com',    role:'member', paid:true, avatar:'ه' },
+    ],
+  },
+];
+
+const DEMO_NOTIFICATIONS = [
+  { id:'gn1', title:'مرحباً بك في SubPay 🎉',      body:'تم تفعيل حسابك بنجاح. ابدأ بالانضمام لروم أو إنشاء روم جديدة.',             time:'منذ أسبوع',  type:'success', unread:false },
+  { id:'gn2', title:'تذكير: Netflix غير مدفوع',   body:'اشتراك Netflix يستحق الدفع قبل 15 يونيو. اضغط لدفع الآن.',                   time:'منذ 3 أيام', type:'warning', unread:true  },
+  { id:'gn3', title:'OTP جديد — ChatGPT Plus',    body:'كود تحقق جديد متاح في روم ChatGPT Plus.',                                     time:'منذ ساعة',   type:'info',    unread:true  },
+];
+
+const DEMO_HISTORY = [
+  { id:'h1', room:'ChatGPT Plus',     amount:49,  date:'1 مايو 2025',    method:'InstaPay',        status:'success' },
+  { id:'h2', room:'Spotify Premium',  amount:35,  date:'20 أبريل 2025',  method:'المحفظة',          status:'success' },
+  { id:'h3', room:'Netflix Standard', amount:99,  date:'15 أبريل 2025',  method:'بطاقة بنكية',     status:'failed'  },
+  { id:'h4', room:'ChatGPT Plus',     amount:49,  date:'1 أبريل 2025',   method:'InstaPay',        status:'success' },
+];
+
+const FAQ_ITEMS = [
+  { q:'ما هو SubPay؟',
+    a:'SubPay منصة لإدارة الاشتراكات المشتركة. يمكنك إنشاء "روم" لأي خدمة اشتراك وإضافة أعضاء يتشاركون معك تكلفة الاشتراك وبيانات الوصول.' },
+  { q:'كيف أنضم لروم؟',
+    a:'اضغط على زر "انضم لروم" في الصفحة الرئيسية وأدخل كود الدعوة الذي أرسله لك الأدمن. الكود عبارة عن 4-12 حرف/رقم.' },
+  { q:'ماذا يحدث لو لم أدفع في الموعد؟',
+    a:'سيتم إيقاف وصولك لبيانات الروم (كلمة المرور والـ OTP) تلقائياً حتى تُجدّد اشتراكك. باقي الأعضاء لن يتأثروا.' },
+  { q:'هل بياناتي آمنة؟',
+    a:'نعم، SubPay يستخدم تشفير SSL لجميع الاتصالات. البيانات الحساسة مشفرة في قاعدة البيانات. أي وصول لبيانات الروم قد يُسجَّل لأغراض أمنية.' },
+  { q:'ما طرق الدفع المتاحة؟',
+    a:'InstaPay، المحفظة الإلكترونية (Vodafone Cash / Orange Cash)، والبطاقة البنكية (Visa / Mastercard).' },
+  { q:'كيف أتواصل مع الدعم؟',
+    a:'يمكنك التواصل معنا عبر البريد الإلكتروني support@subpay.app أو من خلال قسم المساعدة داخل التطبيق. نرد خلال 24 ساعة.' },
+  { q:'هل يمكنني إنشاء روم جديدة؟',
+    a:'إنشاء الرومات متاح حالياً للمشتركين في خطة الأدمن. تواصل معنا عبر الدعم لمعرفة التفاصيل.' },
+];
+
+// ===================================================
+// Navigation
+// ===================================================
+function navigateTo(screenId) {
+  const screens = document.querySelectorAll('.screen');
+  screens.forEach(s => s.classList.remove('active'));
+
+  const target = document.getElementById(screenId);
+  if (!target) return;
+
+  target.classList.add('active');
+
+  // Reset scroll positions
+  target.scrollTop = 0;
+  const sb = target.querySelector('.screen-body');
+  if (sb) sb.scrollTop = 0;
+  const sa = target.querySelector('.scroll-area');
+  if (sa) sa.scrollTop = 0;
+}
+
+function setActiveNav(navKey) {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.nav === navKey);
+  });
+}
+
+// ===================================================
+// Auth — Login
+// ===================================================
+function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value.trim();
+  let valid = true;
+
+  clearFieldError('login-email');
+  clearFieldError('login-password');
+
+  if (!email) {
+    showFieldError('login-email', 'البريد الإلكتروني مطلوب'); valid = false;
+  } else if (!isValidEmail(email)) {
+    showFieldError('login-email', 'بريد إلكتروني غير صحيح'); valid = false;
+  }
+  if (!pass) {
+    showFieldError('login-password', 'كلمة المرور مطلوبة'); valid = false;
+  }
+  if (!valid) return;
+
+  const btn = document.getElementById('btn-login');
+  setButtonLoading(btn, true);
+
+  setTimeout(() => {
+    setButtonLoading(btn, false);
+    loginSuccess(DEMO_USER, DEMO_ROOMS, DEMO_NOTIFICATIONS);
+    showToast('أهلاً بك في SubPay ✅', 'success');
+  }, 1200);
+}
+
+function handleGoogleLogin() {
+  showToast('جاري الاتصال بـ Google...', 'info');
+  setTimeout(() => {
+    loginSuccess(DEMO_USER, DEMO_ROOMS, DEMO_NOTIFICATIONS);
+    showToast('تم تسجيل الدخول بـ Google ✅', 'success');
+  }, 1500);
+}
+
+function loginSuccess(user, rooms, notifs) {
+  state.currentUser   = user;
+  state.rooms         = JSON.parse(JSON.stringify(rooms)); // deep copy
+  state.notifications = JSON.parse(JSON.stringify(notifs));
+  loadHomeScreen();
+  navigateTo('screen-home');
+  setActiveNav('home');
+}
+
+// ===================================================
+// Auth — Register
+// ===================================================
+function handleRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-password').value.trim();
+
+  if (!name || !phone || !email || !pass) {
+    showToast('يرجى تعبئة جميع الحقول', 'error'); return;
+  }
+  if (!isValidEmail(email)) {
+    showToast('بريد إلكتروني غير صحيح', 'error'); return;
+  }
+  if (pass.length < 6) {
+    showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error'); return;
+  }
+
+  const btn = document.getElementById('btn-register');
+  setButtonLoading(btn, true);
+
+  setTimeout(() => {
+    setButtonLoading(btn, false);
+    const newUser = { id:'u_new', name, email, phone, avatar: name.charAt(0) };
+    loginSuccess(newUser, [], [DEMO_NOTIFICATIONS[0]]);
+    showToast('تم إنشاء حسابك بنجاح 🎉', 'success');
+  }, 1200);
+}
+
+// ===================================================
+// Auth — Forgot Password (3-step flow)
+// ===================================================
+let forgotStep = 0;
+
+function handleForgotSend() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email || !isValidEmail(email)) {
+    showToast('يرجى إدخال بريد إلكتروني صحيح', 'error'); return;
+  }
+  showToast('تم إرسال كود التحقق ✉️', 'success');
+  setForgotStep(1);
+}
+
+function handleForgotVerify() {
+  const code = document.getElementById('forgot-code').value.trim();
+  if (code.length < 4) {
+    showToast('يرجى إدخال الكود الكامل', 'error'); return;
+  }
+  showToast('تم التحقق من الكود ✅', 'success');
+  setForgotStep(2);
+}
+
+function handleResetPassword() {
+  const p1 = document.getElementById('forgot-new-pass').value;
+  const p2 = document.getElementById('forgot-confirm-pass').value;
+  if (!p1 || p1.length < 6) {
+    showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error'); return;
+  }
+  if (p1 !== p2) {
+    showToast('كلمتا المرور غير متطابقتين', 'error'); return;
+  }
+  showToast('تم تغيير كلمة المرور بنجاح 🔒', 'success');
+  setForgotStep(0);
+  document.getElementById('forgot-email').value = '';
+  document.getElementById('forgot-code').value  = '';
+  document.getElementById('forgot-new-pass').value     = '';
+  document.getElementById('forgot-confirm-pass').value = '';
+  navigateTo('screen-login');
+}
+
+function setForgotStep(step) {
+  forgotStep = step;
+  [0, 1, 2].forEach(i => {
+    const el = document.getElementById('forgot-step-' + i);
+    if (el) el.style.display = (i === step) ? 'block' : 'none';
+  });
+  document.querySelectorAll('#forgot-steps .step-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === step);
+    dot.classList.toggle('done',   i < step);
+  });
+  const titles = ['استعادة كلمة المرور 🔑', 'أدخل كود التحقق 🔐', 'كلمة مرور جديدة ✨'];
+  const subs   = ['أدخل بريدك لإرسال كود الاستعادة', 'تحقق من بريدك الإلكتروني', 'اختر كلمة مرور جديدة وآمنة'];
+  const t = document.getElementById('forgot-title');
+  const s = document.getElementById('forgot-subtitle');
+  if (t) t.textContent = titles[step];
+  if (s) s.textContent = subs[step];
+}
+
+function handleLogout() {
+  // Stop OTP timer
+  if (state.otpInterval) { clearInterval(state.otpInterval); state.otpInterval = null; }
+  state.currentUser  = null;
+  state.rooms        = [];
+  state.currentRoom  = null;
+  showToast('تم تسجيل الخروج بنجاح', 'info');
+  navigateTo('screen-login');
+}
+
+// ===================================================
+// Home Screen
+// ===================================================
+function loadHomeScreen() {
+  if (!state.currentUser) return;
+
+  document.getElementById('home-user-name').textContent = state.currentUser.name;
+  document.getElementById('stat-rooms').textContent     = state.rooms.length;
+  document.getElementById('stat-paid').textContent      = state.rooms.filter(r => r.isPaid).length;
+  document.getElementById('stat-due').textContent       = state.rooms.filter(r => !r.isPaid).length;
+
+  // Notification badge
+  const unread = state.notifications.filter(n => n.unread).length;
+  const badge  = document.getElementById('notif-badge');
+  if (badge) badge.style.display = unread > 0 ? 'block' : 'none';
+
+  // Profile header
+  document.getElementById('profile-name').textContent  = state.currentUser.name;
+  document.getElementById('profile-email').textContent = state.currentUser.email;
+  document.getElementById('profile-avatar').textContent = state.currentUser.avatar || state.currentUser.name.charAt(0);
+
+  renderRoomsList();
+  renderNotificationsList();
+  renderHistoryList();
+  renderFAQ();
+}
+
+// ===================================================
+// Rooms List
+// ===================================================
+function renderRoomsList() {
+  const list = document.getElementById('rooms-list');
+  if (!list) return;
+
+  if (state.rooms.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state fade-in">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <div class="empty-title">لا توجد روم بعد</div>
+        <div class="empty-subtitle">انضم لروم بكود دعوة من الأدمن</div>
+        <button class="btn btn-primary" style="max-width:200px;margin-top:8px" onclick="openModal('modal-join')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          انضم لروم
+        </button>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = state.rooms.map(room => `
+    <div class="room-card fade-in" onclick="openRoom('${room.id}')">
+      <div class="room-icon ${room.iconClass}">${room.icon}</div>
+      <div class="room-info">
+        <div class="room-name">${room.name}</div>
+        <div class="room-meta">${room.members} أعضاء · يُجدد ${room.renewDate}</div>
+        <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+          ${room.isPaid
+            ? '<span class="badge badge-success"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> مدفوع</span>'
+            : '<span class="badge badge-danger">⚠ غير مدفوع</span>'
+          }
+          <span class="badge badge-primary">${room.price} ${room.currency}/شهر</span>
+          ${room.isAdmin ? '<span class="badge badge-warning">Admin</span>' : ''}
+        </div>
+      </div>
+      <svg class="room-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </div>
+  `).join('');
+}
+
+// ===================================================
+// Open Room
+// ===================================================
+function openRoom(roomId) {
+  const room = state.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  state.currentRoom = room;
+
+  if (!room.isPaid) {
+    // Locked screen
+    document.getElementById('unpaid-room-name').textContent = room.name;
+    document.getElementById('locked-reason').textContent    =
+      'لم يتم سداد اشتراك ' + room.name + ' للشهر الجاري. ادفع للوصول لجميع بيانات الروم.';
+    document.getElementById('locked-amount').innerHTML =
+      room.price + ' <span>' + room.currency + '/شهر</span>';
+    navigateTo('screen-unpaid');
+    return;
+  }
+
+  // Room header
+  document.getElementById('room-detail-icon').textContent = room.icon;
+  document.getElementById('room-detail-name').textContent = room.name;
+  document.getElementById('room-detail-meta').textContent =
+    room.members + ' أعضاء · ' + (room.isPaid ? 'مدفوع ✓' : 'غير مدفوع');
+
+  // Info card
+  renderRoomInfoCard(room);
+
+  // OTP
+  startOTPTimer();
+
+  // Sub-lists
+  renderRoomNotifications(room);
+  renderRoomMembers(room);
+
+  // Show members tab only for admin/owner
+  const membersTabBtn = document.getElementById('tab-members-btn');
+  if (membersTabBtn) {
+    membersTabBtn.style.display = room.isAdmin ? 'block' : 'none';
+  }
+
+  // Reset to first tab
+  switchTab('room', 'data');
+
+  navigateTo('screen-room');
+}
+
+function renderRoomInfoCard(room) {
+  const card = document.getElementById('room-info-card');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="info-row">
+      <span class="info-key">الخدمة</span>
+      <span class="info-val">${room.service}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">السعر الشهري</span>
+      <span class="info-val">${room.price} ${room.currency}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">تاريخ التجديد</span>
+      <span class="info-val">${room.renewDate}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">اسم المستخدم</span>
+      <span class="info-val mono" style="direction:ltr;text-align:left">${room.username}</span>
+    </div>
+    <div class="info-row" style="border-bottom:none">
+      <span class="info-key">كلمة المرور</span>
+      <span class="info-val" style="gap:8px">
+        <span class="mono blurred" id="room-pass-val" style="direction:ltr;letter-spacing:2px">${room.password}</span>
+        <button class="toggle-vis" id="room-pass-toggle" onclick="toggleRoomPassword()" title="إظهار / إخفاء">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </span>
+    </div>
+  `;
+}
+
+// ===================================================
+// Password Toggle
+// ===================================================
+let passVisible = false;
+function toggleRoomPassword() {
+  passVisible = !passVisible;
+  const val = document.getElementById('room-pass-val');
+  if (val) val.classList.toggle('blurred', !passVisible);
+}
+
+// ===================================================
+// OTP Timer
+// ===================================================
+function startOTPTimer() {
+  if (state.otpInterval) clearInterval(state.otpInterval);
+
+  const TOTAL = 30;
+  let secsLeft = TOTAL;
+  const genOTP = () => String(Math.floor(100000 + Math.random() * 900000));
+  let otp = genOTP();
+
+  const update = () => {
+    const codeEl = document.getElementById('otp-code');
+    const timeEl = document.getElementById('otp-time-left');
+    const barEl  = document.getElementById('otp-bar');
+    if (!codeEl) { clearInterval(state.otpInterval); return; }
+
+    codeEl.textContent = otp;
+    if (timeEl) timeEl.textContent = secsLeft + 's';
+    if (barEl) {
+      barEl.style.width      = ((secsLeft / TOTAL) * 100) + '%';
+      barEl.style.background = secsLeft <= 5 ? 'var(--danger)' : 'var(--primary)';
+    }
+  };
+
+  update();
+  state.otpInterval = setInterval(() => {
+    secsLeft--;
+    if (secsLeft <= 0) { secsLeft = TOTAL; otp = genOTP(); }
+    update();
+  }, 1000);
+}
+
+// ===================================================
+// Room Notifications
+// ===================================================
+function renderRoomNotifications(room) {
+  const list = document.getElementById('room-notifs-list');
+  if (!list) return;
+  if (!room.notifications || room.notifications.length === 0) {
+    list.innerHTML = emptyState('لا توجد إشعارات لهذه الروم', 'bell');
+    return;
+  }
+  list.innerHTML = room.notifications.map(n => notifItemHTML(n)).join('');
+}
+
+// ===================================================
+// Members
+// ===================================================
+function renderRoomMembers(room) {
+  const list      = document.getElementById('room-members-list');
+  const actDiv    = document.getElementById('room-members-actions');
+  if (!list) return;
+
+  if (actDiv) actDiv.style.display = room.isAdmin ? 'block' : 'none';
+
+  list.innerHTML = room.membersList.map(m => `
+    <div class="member-item fade-in">
+      <div class="member-avatar">${m.avatar}</div>
+      <div class="member-info">
+        <div class="member-name">${m.name}</div>
+        <div class="member-email">${m.email}</div>
+        <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
+          ${roleBadge(m.role)}
+          ${m.paid
+            ? '<span class="badge badge-success">مدفوع</span>'
+            : '<span class="badge badge-danger">غير مدفوع</span>'}
+        </div>
+      </div>
+      ${(room.isAdmin && m.role !== 'owner') ? `
+        <div class="member-actions">
+          <button class="btn btn-xs btn-danger" onclick="confirmRemoveMember('${m.id}','${m.name}')">إزالة</button>
+        </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function roleBadge(role) {
+  const map = {
+    owner:  '<span class="badge badge-primary">Owner</span>',
+    admin:  '<span class="badge badge-warning">Admin</span>',
+    member: '<span class="badge badge-muted">Member</span>',
+  };
+  return map[role] || map.member;
+}
+
+function confirmRemoveMember(memberId) {
+  state.memberToRemove = memberId;
+  openModal('modal-remove-member');
+}
+
+// ===================================================
+// Tabs
+// ===================================================
+function switchTab(screenKey, tabName) {
+  const screen = document.getElementById('screen-' + screenKey);
+  if (!screen) return;
+
+  screen.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  screen.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+  const tabMap = { data:0, notifs:1, members:2 };
+  const idx    = tabMap[tabName] !== undefined ? tabMap[tabName] : 0;
+  const tabs   = screen.querySelectorAll('.tab-item');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+
+  const panel = document.getElementById('room-tab-' + tabName);
+  if (panel) panel.classList.add('active');
+}
+
+// ===================================================
+// Payment
+// ===================================================
+function goToPayment() {
+  if (!state.currentRoom) return;
+  // Set period label (current month/year)
+  const now = new Date();
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const period = months[now.getMonth()] + ' ' + now.getFullYear();
+
+  document.getElementById('payment-room-name').textContent = state.currentRoom.name;
+  document.getElementById('payment-period').textContent    = period;
+  document.getElementById('payment-amount').textContent    = state.currentRoom.price + ' ' + state.currentRoom.currency;
+
+  // Reset method selection to first
+  document.querySelectorAll('.payment-method').forEach((m, i) => {
+    m.classList.toggle('selected', i === 0);
+    const chk = m.querySelector('.payment-check');
+    if (chk) chk.innerHTML = i === 0
+      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+      : '';
+  });
+  state.selectedPaymentMethod = 'instapay';
+
+  navigateTo('screen-payment');
+}
+
+function selectPaymentMethod(el, method) {
+  document.querySelectorAll('.payment-method').forEach(m => {
+    m.classList.remove('selected');
+    const c = m.querySelector('.payment-check');
+    if (c) c.innerHTML = '';
+  });
+  el.classList.add('selected');
+  state.selectedPaymentMethod = method;
+  const chk = el.querySelector('.payment-check');
+  if (chk) chk.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+}
+
+function handlePayment() {
+  const btn = document.getElementById('btn-pay');
+  setButtonLoading(btn, true);
+
+  setTimeout(() => {
+    setButtonLoading(btn, false);
+    if (state.currentRoom) {
+      state.currentRoom.isPaid = true;
+      // Add to history
+      DEMO_HISTORY.unshift({
+        id:     'h_' + Date.now(),
+        room:   state.currentRoom.name,
+        amount: state.currentRoom.price,
+        date:   'الآن',
+        method: paymentMethodLabel(state.selectedPaymentMethod),
+        status: 'success',
+      });
+      loadHomeScreen();
+      showToast('تم الدفع بنجاح ✅', 'success');
+      setTimeout(() => openRoom(state.currentRoom.id), 700);
+    }
+  }, 1500);
+}
+
+function paymentMethodLabel(m) {
+  return { instapay:'InstaPay', wallet:'المحفظة', card:'بطاقة بنكية' }[m] || m;
+}
+
+// ===================================================
+// Notifications
+// ===================================================
+function renderNotificationsList() {
+  const list = document.getElementById('notifs-list');
+  if (!list) return;
+  if (state.notifications.length === 0) {
+    list.innerHTML = emptyState('لا توجد إشعارات', 'bell');
+    return;
+  }
+  list.innerHTML = state.notifications.map(n => notifItemHTML(n, true)).join('');
+}
+
+function notifItemHTML(n, clickable = false) {
+  const icons = {
+    success: 'background:var(--success-soft);color:var(--success)',
+    warning: 'background:var(--warning-soft);color:var(--warning)',
+    danger:  'background:var(--danger-soft);color:var(--danger)',
+    info:    'background:var(--primary-soft);color:var(--primary)',
+  };
+  const svgs = {
+    success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+    warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
+    danger:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
+  const style   = icons[n.type]  || icons.info;
+  const iconSVG = svgs[n.type]   || svgs.info;
+  const click   = clickable ? `onclick="markNotifRead('${n.id}')"` : '';
+  return `
+    <div class="notif-item ${n.unread ? 'unread' : ''} fade-in" ${click}>
+      <div class="notif-icon" style="${style}">${iconSVG}</div>
+      <div class="notif-content">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-body">${n.body}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>`;
+}
+
+function markNotifRead(id) {
+  const n = state.notifications.find(x => x.id === id);
+  if (n) n.unread = false;
+  renderNotificationsList();
+  const unread = state.notifications.filter(x => x.unread).length;
+  const badge  = document.getElementById('notif-badge');
+  if (badge) badge.style.display = unread > 0 ? 'block' : 'none';
+}
+
+function markAllRead() {
+  state.notifications.forEach(n => n.unread = false);
+  renderNotificationsList();
+  const badge = document.getElementById('notif-badge');
+  if (badge) badge.style.display = 'none';
+  showToast('تم تحديد الكل كمقروء ✅', 'success');
+}
+
+// ===================================================
+// Payment History
+// ===================================================
+function renderHistoryList() {
+  const list = document.getElementById('history-list');
+  if (!list) return;
+  if (DEMO_HISTORY.length === 0) {
+    list.innerHTML = emptyState('لا توجد معاملات بعد', 'card');
+    return;
+  }
+  list.innerHTML = DEMO_HISTORY.map(h => `
+    <div class="info-card fade-in" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px">
+      <div style="width:46px;height:46px;border-radius:var(--r-sm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;
+        ${h.status === 'success'
+          ? 'background:var(--success-soft);color:var(--success)'
+          : 'background:var(--danger-soft);color:var(--danger)'}">
+        ${h.status === 'success'
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.room}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${h.method} · ${h.date}</div>
+      </div>
+      <div style="font-size:16px;font-weight:800;flex-shrink:0;
+        ${h.status === 'success' ? 'color:var(--success)' : 'color:var(--danger)'}">
+        ${h.amount} ج
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===================================================
+// FAQ
+// ===================================================
+function renderFAQ() {
+  const list = document.getElementById('faq-list');
+  if (!list) return;
+  list.innerHTML = FAQ_ITEMS.map((item, i) => `
+    <div class="faq-item" id="faq-item-${i}">
+      <div class="faq-question" onclick="toggleFAQ(${i})">
+        <span>${item.q}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <div class="faq-answer">${item.a}</div>
+    </div>
+  `).join('');
+}
+
+function toggleFAQ(idx) {
+  const item = document.getElementById('faq-item-' + idx);
+  if (item) item.classList.toggle('open');
+}
+
+// ===================================================
+// Join Room
+// ===================================================
+function handleJoinRoom() {
+  const input   = document.getElementById('join-code-input');
+  const errorEl = document.getElementById('join-code-error');
+  const errTxt  = document.getElementById('join-code-error-text');
+  const code    = input ? input.value.trim() : '';
+
+  if (errorEl) errorEl.style.display = 'none';
+
+  if (!code) {
+    if (errorEl) errorEl.style.display = 'flex';
+    if (errTxt)  errTxt.textContent    = 'يرجى إدخال كود الدعوة';
+    return;
+  }
+  if (code.length < 4) {
+    if (errorEl) errorEl.style.display = 'flex';
+    if (errTxt)  errTxt.textContent    = 'الكود قصير جداً';
+    return;
+  }
+
+  closeModal('modal-join');
+  if (input) input.value = '';
+  showToast('تم الانضمام للروم بنجاح 🎉', 'success');
+}
+
+// ===================================================
+// Modals
+// ===================================================
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.add('open');
+}
+
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+}
+
+// Close on overlay click
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('open');
+  }
+});
+
+// ===================================================
+// Toast
+// ===================================================
+function showToast(msg, type = 'info', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const iconMap = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
+
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.innerHTML = (iconMap[type] || iconMap.info) + '<span>' + msg + '</span>';
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// ===================================================
+// Helpers
+// ===================================================
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function showFieldError(fieldId, message) {
+  const input   = document.getElementById(fieldId);
+  const errDiv  = document.getElementById(fieldId + '-error');
+  const errText = document.getElementById(fieldId + '-error-text');
+  if (input)   input.classList.add('error');
+  if (errDiv)  errDiv.style.display = 'flex';
+  if (errText) errText.textContent  = message;
+}
+
+function clearFieldError(fieldId) {
+  const input  = document.getElementById(fieldId);
+  const errDiv = document.getElementById(fieldId + '-error');
+  if (input)  input.classList.remove('error');
+  if (errDiv) errDiv.style.display = 'none';
+}
+
+function setButtonLoading(btn, loading) {
+  if (!btn) return;
+  btn.classList.toggle('btn-loading', loading);
+  btn.disabled = loading;
+}
+
+function togglePasswordVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function emptyState(title, icon) {
+  const icons = {
+    bell: '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>',
+    card: '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+    room: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>',
+  };
+  return `
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${icons[icon] || icons.room}</svg>
+      </div>
+      <div class="empty-title">${title}</div>
+    </div>`;
+}
+
+// ===================================================
+// Event Listeners (after DOM ready)
+// ===================================================
+function setupEventListeners() {
+  // Join Room confirm
+  const joinBtn = document.getElementById('btn-join-confirm');
+  if (joinBtn) joinBtn.addEventListener('click', handleJoinRoom);
+
+  // Add Member confirm
+  const addMemberBtn = document.getElementById('btn-add-member-confirm');
+  if (addMemberBtn) {
+    addMemberBtn.addEventListener('click', () => {
+      const emailInput = document.getElementById('add-member-email');
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (!email || !isValidEmail(email)) {
+        showToast('بريد إلكتروني غير صحيح', 'error'); return;
+      }
+      if (state.currentRoom) {
+        const newM = {
+          id:     'nm_' + Date.now(),
+          name:    email.split('@')[0],
+          email:   email,
+          role:   'member',
+          paid:    false,
+          avatar:  email.charAt(0).toUpperCase(),
+        };
+        state.currentRoom.membersList.push(newM);
+        state.currentRoom.members++;
+        renderRoomMembers(state.currentRoom);
+      }
+      closeModal('modal-add-member');
+      if (emailInput) emailInput.value = '';
+      showToast('تم إرسال الدعوة ✅', 'success');
+    });
+  }
+
+  // Remove Member confirm
+  const removeMemberBtn = document.getElementById('btn-remove-member-confirm');
+  if (removeMemberBtn) {
+    removeMemberBtn.addEventListener('click', () => {
+      if (state.memberToRemove && state.currentRoom) {
+        state.currentRoom.membersList = state.currentRoom.membersList.filter(m => m.id !== state.memberToRemove);
+        state.currentRoom.members     = state.currentRoom.membersList.length;
+        renderRoomMembers(state.currentRoom);
+        state.memberToRemove = null;
+      }
+      closeModal('modal-remove-member');
+      showToast('تم إزالة العضو', 'success');
+    });
+  }
+
+  // Delete Account confirm
+  const deleteBtn = document.getElementById('btn-delete-confirm');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      const val = (document.getElementById('delete-confirm-input') || {}).value || '';
+      if (val.trim() !== 'احذف حسابي') {
+        showToast('اكتب "احذف حسابي" بالضبط للتأكيد', 'error'); return;
+      }
+      if (state.otpInterval) clearInterval(state.otpInterval);
+      closeModal('modal-delete-account');
+      showToast('تم حذف الحساب نهائياً', 'info');
+      setTimeout(() => navigateTo('screen-login'), 800);
+    });
+  }
+}
+
+// ===================================================
+// App Init
+// ===================================================
+function init() {
+  renderFAQ(); // pre-render so FAQ screen is instant
+  setupEventListeners();
+  navigateTo('screen-splash');
+
+  // Auto-advance splash → login
+  setTimeout(() => navigateTo('screen-login'), 2400);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+</script>
+</body>
+</html>

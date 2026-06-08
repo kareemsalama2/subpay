@@ -1,0 +1,63 @@
+{
+  "users": [
+    {
+      "id": "usr_admin",
+      "name": "SubPay Security",
+      "email": "security@subpay.local",
+      "phone": "",
+      "avatar": "AD",
+      "role": "admin",
+      "password": "CHANGE_ME_IN_ENV",
+      "language": "ar",
+      "createdAt": 1780958797205
+    },
+    {
+      "id": "usr_demo_member",
+      "name": "Demo Member",
+      "email": "member@example.com",
+      "phone": "01000000000",
+      "avatar": "DM",
+      "role": "member",
+      "password": "",
+      "language": "ar",
+      "createdAt": 1780958797205
+    }
+  ],
+  "sessions": [],
+  "rooms": [
+    {
+      "id": "room_chatgpt_demo",
+      "ownerId": "usr_admin",
+      "name": "ChatGPT Room",
+      "code": "GPT728",
+      "inviteLink": "subpay://join/GPT728",
+      "inboundEmail": "add-gmail-from-admin-panel@example.com",
+      "subscriptionEmail": "shared-account@example.com",
+      "monthlyPrice": 50,
+      "password": "CHANGE_FROM_ADMIN_PANEL",
+      "createdAt": 1780958797205
+    }
+  ],
+  "memberships": [
+    {
+      "id": "mem_admin_chatgpt",
+      "roomId": "room_chatgpt_demo",
+      "userId": "usr_admin",
+      "role": "owner",
+      "paidUntil": "2026-06-30",
+      "createdAt": 1780958797205
+    },
+    {
+      "id": "mem_member_chatgpt",
+      "roomId": "room_chatgpt_demo",
+      "userId": "usr_demo_member",
+      "role": "member",
+      "paidUntil": "2026-06-30",
+      "createdAt": 1780958797205
+    }
+  ],
+  "messages": [],
+  "payments": [],
+  "gmailAccounts": [],
+  "imapAccounts": []
+}

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SubPay">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2D3A8C">
+  <title>SubPay</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ===== MODAL: Join Room ===== -->
+  <div class="modal-overlay" id="modal-join">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">انضم لروم</h2>
+      <div class="join-room-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-bottom:20px">أدخل كود الدعوة الذي استلمته من الأدمن</p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">كود الدعوة</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="text" class="form-input ltr" id="join-code-input" placeholder="XXXX-XXXX" maxlength="12">
+        </div>
+        <div class="form-error" id="join-code-error" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="join-code-error-text">كود غير صحيح</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-join-confirm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        انضم الآن
+      </button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-join')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Add Member ===== -->
+  <div class="modal-overlay" id="modal-add-member">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">إضافة عضو</h2>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="form-input ltr" id="add-member-email" placeholder="email@example.com">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-member-confirm">إضافة</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-add-member')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Create Room ===== -->
+  <div class="modal-overlay" id="modal-create-room">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">إنشاء روم جديد</h2>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">اسم الروم</label>
+        <input type="text" class="form-input" id="create-room-name" placeholder="ChatGPT Team">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">إيميل الاشتراك</label>
+        <input type="email" class="form-input ltr" id="create-room-sub-email" placeholder="account@example.com">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">باسورد الاشتراك</label>
+        <input type="text" class="form-input ltr" id="create-room-sub-password" placeholder="Subscription password">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">السعر الشهري</label>
+        <input type="number" class="form-input ltr" id="create-room-price" placeholder="50" min="0">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Gmail الذي يستقبل OTP</label>
+        <input type="email" class="form-input ltr" id="create-room-imap-email" placeholder="subpay.otp@gmail.com">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Gmail App Password</label>
+        <input type="password" class="form-input ltr" id="create-room-imap-password" placeholder="xxxx xxxx xxxx xxxx">
+      </div>
+      <button class="btn btn-primary" id="btn-create-room-confirm">إنشاء وربط OTP</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-create-room')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Delete Account ===== -->
+  <div class="modal-overlay" id="modal-delete-account">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="confirm-danger-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      </div>
+      <h2 class="modal-title text-center" style="color:var(--danger)">حذف الحساب</h2>
+      <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-bottom:20px">هذا الإجراء <strong>لا يمكن التراجع عنه</strong>. سيتم حذف جميع بياناتك وإلغاء جميع اشتراكاتك نهائياً.</p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">اكتب "احذف حسابي" للتأكيد</label>
+        <input type="text" class="form-input" id="delete-confirm-input" placeholder="احذف حسابي">
+      </div>
+      <button class="btn" id="btn-delete-confirm" style="background:var(--danger);color:#fff;border:none">حذف الحساب نهائياً</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-delete-account')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Remove Member ===== -->
+  <div class="modal-overlay" id="modal-remove-member">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="confirm-danger-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+      </div>
+      <h2 class="modal-title text-center">إزالة العضو</h2>
+      <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-bottom:20px">هل أنت متأكد من إزالة هذا العضو من الروم؟</p>
+      <button class="btn" id="btn-remove-member-confirm" style="background:var(--danger);color:#fff;border:none">نعم، إزالة</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-remove-member')">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Splash ===== -->
+  <div class="screen active" id="screen-splash">
+    <div class="splash-bg">
+      <div class="splash-circle splash-circle-1"></div>
+      <div class="splash-circle splash-circle-2"></div>
+      <div class="splash-circle splash-circle-3"></div>
+    </div>
+    <div class="splash-logo">
+      <div class="splash-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+          <path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+          <path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="splash-name">Sub<span>Pay</span></div>
+    </div>
+    <div class="splash-tagline">إدارة الاشتراكات المشتركة بكل سهولة</div>
+    <div class="splash-loader">
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Login ===== -->
+  <div class="screen auth-screen" id="screen-login">
+    <div class="auth-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+            <path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)"/>
+            <path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="auth-logo-name">SubPay</span>
+      </div>
+      <h1 class="auth-title">مرحباً بعودتك 👋</h1>
+      <p class="auth-subtitle">سجّل دخولك لإدارة اشتراكاتك</p>
+    </div>
+    <div class="auth-body scroll-area">
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="form-input ltr" id="login-email" placeholder="email@example.com" autocomplete="email">
+        </div>
+        <div class="form-error" id="login-email-error" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-email-error-text"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" class="form-input ltr has-action" id="login-password" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="input-action" onclick="togglePasswordVisibility('login-password')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="form-error" id="login-password-error" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-password-error-text"></span>
+        </div>
+      </div>
+      <div style="text-align:left">
+        <button class="btn-ghost" onclick="navigateTo('screen-forgot')">نسيت كلمة المرور؟</button>
+      </div>
+      <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        تسجيل الدخول
+      </button>
+      <div class="auth-divider">أو</div>
+      <button class="btn btn-google" onclick="handleGoogleLogin()">
+        <svg class="btn-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        المتابعة بحساب Google
+      </button>
+      <div class="auth-footer">
+        ليس لديك حساب؟ <a onclick="navigateTo('screen-register')">إنشاء حساب</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Register ===== -->
+  <div class="screen auth-screen" id="screen-register">
+    <div class="auth-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)"/><path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="auth-logo-name">SubPay</span>
+      </div>
+      <h1 class="auth-title">إنشاء حساب جديد ✨</h1>
+      <p class="auth-subtitle">انضم وابدأ إدارة اشتراكاتك</p>
+    </div>
+    <div class="auth-body scroll-area">
+      <div class="form-group">
+        <label class="form-label">الاسم الكامل</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" class="form-input" id="reg-name" placeholder="محمد أحمد">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الهاتف</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.08 2.18 2 2 0 012.08 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.71-.71a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <input type="tel" class="form-input ltr" id="reg-phone" placeholder="+20 1X XXXX XXXX">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="form-input ltr" id="reg-email" placeholder="email@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">كلمة المرور</label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" class="form-input ltr has-action" id="reg-password" placeholder="••••••••">
+          <button type="button" class="input-action" onclick="togglePasswordVisibility('reg-password')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-register" onclick="handleRegister()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        إنشاء الحساب
+      </button>
+      <div class="auth-divider">أو</div>
+      <button class="btn btn-google" onclick="handleGoogleLogin()">
+        <svg class="btn-google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        التسجيل بحساب Google
+      </button>
+      <div class="auth-footer">
+        لديك حساب بالفعل؟ <a onclick="navigateTo('screen-login')">تسجيل الدخول</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Forgot Password ===== -->
+  <div class="screen auth-screen" id="screen-forgot">
+    <div class="auth-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="28" rx="5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/><path d="M14 20h20M14 26h12" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="34" cy="30" r="8" fill="rgba(79,70,229,0.85)"/><path d="M31 30l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="auth-logo-name">SubPay</span>
+      </div>
+      <h1 class="auth-title" id="forgot-title">استعادة كلمة المرور 🔑</h1>
+      <p class="auth-subtitle" id="forgot-subtitle">أدخل بريدك لإرسال كود الاستعادة</p>
+    </div>
+    <div class="auth-body scroll-area">
+      <div class="step-dots" id="forgot-steps">
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+      <!-- Step 0: Email -->
+      <div id="forgot-step-0">
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">البريد الإلكتروني</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" class="form-input ltr" id="forgot-email" placeholder="email@example.com">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleForgotSend()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          إرسال الكود
+        </button>
+      </div>
+      <!-- Step 1: Code -->
+      <div id="forgot-step-1" style="display:none">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;text-align:center">أرسلنا كود التحقق إلى بريدك الإلكتروني</p>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">كود التحقق</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="text" class="form-input ltr" id="forgot-code" placeholder="123456" maxlength="6" style="font-size:24px;letter-spacing:8px;text-align:center;padding-right:12px;padding-left:12px">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleForgotVerify()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          تحقق من الكود
+        </button>
+        <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted)">لم يصلك الكود؟ <span class="link" onclick="handleForgotSend()">إعادة الإرسال</span></p>
+      </div>
+      <!-- Step 2: New password -->
+      <div id="forgot-step-2" style="display:none">
+        <div class="form-group">
+          <label class="form-label">كلمة المرور الجديدة</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="password" class="form-input ltr has-action" id="forgot-new-pass" placeholder="••••••••">
+            <button type="button" class="input-action" onclick="togglePasswordVisibility('forgot-new-pass')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">تأكيد كلمة المرور</label>
+          <div class="input-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="password" class="form-input ltr" id="forgot-confirm-pass" placeholder="••••••••">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="handleResetPassword()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          تأكيد كلمة المرور
+        </button>
+      </div>
+      <div class="auth-footer" style="margin-top:16px">
+        <a onclick="navigateTo('screen-login')">العودة لتسجيل الدخول</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Home ===== -->
+  <div class="screen has-nav" id="screen-home">
+    <div class="home-header">
+      <div class="home-header-bg">
+        <div class="home-header-circle home-header-circle-1"></div>
+        <div class="home-header-circle home-header-circle-2"></div>
+      </div>
+      <div class="home-header-top">
+        <div>
+          <div class="home-greeting">مرحباً 👋</div>
+          <div class="home-user-name" id="home-user-name">محمد أحمد</div>
+        </div>
+        <button class="home-notif-btn" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="notif-badge" id="notif-badge" style="display:none"></div>
+        </button>
+      </div>
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-rooms">0</div>
+          <div class="stat-label">روماتي</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-paid">0</div>
+          <div class="stat-label">مدفوعة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-due">0</div>
+          <div class="stat-label">مستحقة</div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-body">
+      <div class="home-body">
+        <div class="section-header">
+          <span class="section-title">روماتي</span>
+          <button class="btn btn-sm btn-primary" onclick="openModal('modal-join')" style="display:flex;align-items:center;gap:4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            انضم لروم
+          </button>
+        </div>
+        <button class="btn btn-outline" id="btn-open-create-room" onclick="openModal('modal-create-room')" style="display:none;margin-bottom:12px">
+          إنشاء روم جديد
+        </button>
+        <div id="rooms-list"></div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Room Details ===== -->
+  <div class="screen has-nav" id="screen-room">
+    <div class="room-detail-header">
+      <div class="auth-header-bg">
+        <div class="auth-header-circle auth-header-circle-1"></div>
+        <div class="auth-header-circle auth-header-circle-2"></div>
+      </div>
+      <button class="back-btn" onclick="navigateTo('screen-home');setActiveNav('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="room-detail-icon" id="room-detail-icon">🤖</div>
+      <div class="room-detail-name" id="room-detail-name">ChatGPT Plus</div>
+      <div class="room-detail-meta" id="room-detail-meta">5 أعضاء · مدفوع</div>
+    </div>
+    <div class="tabs-bar">
+      <button class="tab-item active" onclick="switchTab('room','data')">بيانات الاشتراك</button>
+      <button class="tab-item" onclick="switchTab('room','notifs')">الإشعارات</button>
+      <button class="tab-item" id="tab-members-btn" style="display:none" onclick="switchTab('room','members')">الأعضاء</button>
+    </div>
+    <div class="screen-body">
+      <div class="tab-panel active" id="room-tab-data">
+        <div class="warning-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          الوصول للبيانات الحساسة قد يتم تسجيله لأغراض أمنية.
+        </div>
+        <div class="otp-card" id="otp-card">
+          <div class="otp-label">🔐 كود التحقق الحالي (OTP)</div>
+          <div class="otp-code" id="otp-code">--</div>
+          <div class="otp-timer">
+            <span id="otp-time-left">--</span>
+            <div class="otp-timer-progress">
+              <div class="otp-timer-bar" id="otp-bar" style="width:100%"></div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+        </div>
+        <div class="info-card" id="room-info-card"></div>
+      </div>
+      <div class="tab-panel" id="room-tab-notifs">
+        <div id="room-notifs-list"></div>
+      </div>
+      <div class="tab-panel" id="room-tab-members">
+        <div id="room-members-actions" style="display:none;margin-bottom:12px">
+          <button class="btn btn-outline" style="display:flex;align-items:center;gap:8px" onclick="openModal('modal-add-member')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            إضافة عضو
+          </button>
+        </div>
+        <div id="room-members-list"></div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Unpaid ===== -->
+  <div class="screen" id="screen-unpaid">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-home');setActiveNav('home')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title" id="unpaid-room-name">ChatGPT Plus</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="locked-screen">
+      <div class="locked-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <h2 class="locked-title">الوصول محظور</h2>
+      <p class="locked-reason" id="locked-reason">لم يتم تجديد الاشتراك الشهري. يرجى الدفع للوصول لبيانات الروم.</p>
+      <div class="locked-amount" id="locked-amount">49 <span>جنيه / شهر</span></div>
+      <button class="btn btn-primary" style="max-width:280px" onclick="goToPayment()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        ادفع الآن
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Payment ===== -->
+  <div class="screen" id="screen-payment">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-unpaid')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">الدفع</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div class="payment-summary">
+        <div class="info-row">
+          <span class="info-key">الروم</span>
+          <span class="info-val" id="payment-room-name">ChatGPT Plus</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">الفترة</span>
+          <span class="info-val" id="payment-period">يونيو 2025</span>
+        </div>
+        <div class="info-row" style="border-bottom:none">
+          <span class="info-key">المبلغ</span>
+          <span class="info-val payment-total" id="payment-amount">49 جنيه</span>
+        </div>
+      </div>
+      <div class="section-header" style="margin-bottom:12px">
+        <span class="section-title">طريقة الدفع</span>
+      </div>
+      <div class="payment-methods">
+        <div class="payment-method selected" onclick="selectPaymentMethod(this,'instapay')">
+          <div class="payment-method-icon">⚡</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">InstaPay</div>
+            <div class="payment-method-desc">دفع فوري عبر InstaPay</div>
+          </div>
+          <div class="payment-check">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="payment-method" onclick="selectPaymentMethod(this,'wallet')">
+          <div class="payment-method-icon">👜</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">المحفظة الإلكترونية</div>
+            <div class="payment-method-desc">Vodafone Cash / Orange Cash</div>
+          </div>
+          <div class="payment-check"></div>
+        </div>
+        <div class="payment-method" onclick="selectPaymentMethod(this,'card')">
+          <div class="payment-method-icon">💳</div>
+          <div class="payment-method-info">
+            <div class="payment-method-name">بطاقة بنكية</div>
+            <div class="payment-method-desc">Visa / Mastercard</div>
+          </div>
+          <div class="payment-check"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-pay" onclick="handlePayment()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        تأكيد الدفع
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Notifications ===== -->
+  <div class="screen has-nav" id="screen-notif">
+    <div class="top-header">
+      <div style="width:40px"></div>
+      <span class="header-title">الإشعارات</span>
+      <button class="header-action" onclick="markAllRead()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div id="notifs-list"></div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item active" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Profile ===== -->
+  <div class="screen has-nav" id="screen-profile">
+    <div class="top-header">
+      <div style="width:40px"></div>
+      <span class="header-title">حسابي</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body">
+      <div class="profile-header-card">
+        <div class="profile-avatar" id="profile-avatar">م</div>
+        <div>
+          <div class="profile-name" id="profile-name">محمد أحمد</div>
+          <div class="profile-email" id="profile-email">m.ahmed@email.com</div>
+        </div>
+      </div>
+      <div class="profile-menu">
+        <div class="menu-group">
+          <div class="menu-group-title">الحساب</div>
+          <button class="menu-item" onclick="navigateTo('screen-history')">
+            <div class="menu-item-icon primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">سجل المدفوعات</div>
+              <div class="menu-item-sub">عرض جميع المعاملات</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="menu-item" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+            <div class="menu-item-icon primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">الإشعارات</div>
+              <div class="menu-item-sub">إدارة التنبيهات</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">المساعدة</div>
+          <button class="menu-item" onclick="navigateTo('screen-faq')">
+            <div class="menu-item-icon muted">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">الأسئلة الشائعة</div>
+              <div class="menu-item-sub">عن SubPay وكيفية الاستخدام</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">الإجراءات</div>
+          <button class="menu-item" onclick="handleLogout()">
+            <div class="menu-item-icon warning">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label">تسجيل الخروج</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="menu-item" onclick="openModal('modal-delete-account')">
+            <div class="menu-item-icon danger">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </div>
+            <div class="menu-item-text">
+              <div class="menu-item-label" style="color:var(--danger)">حذف الحساب</div>
+              <div class="menu-item-sub">إجراء لا يمكن التراجع عنه</div>
+            </div>
+            <svg class="menu-item-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div style="text-align:center;padding:16px 0;color:var(--text-muted);font-size:12px">
+          SubPay v1.0.0 · جميع الحقوق محفوظة © 2025
+        </div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" data-nav="home" onclick="setActiveNav('home');navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>الرئيسية</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item" data-nav="notif" onclick="setActiveNav('notif');navigateTo('screen-notif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span>الإشعارات</span>
+        <div class="nav-dot"></div>
+      </button>
+      <button class="nav-item active" data-nav="profile" onclick="setActiveNav('profile');navigateTo('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>حسابي</span>
+        <div class="nav-dot"></div>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ===== SCREEN: Payment History ===== -->
+  <div class="screen" id="screen-history">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-profile')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">سجل المدفوعات</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: FAQ ===== -->
+  <div class="screen" id="screen-faq">
+    <div class="top-header">
+      <button class="back-btn" onclick="navigateTo('screen-profile')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">الأسئلة الشائعة</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="screen-body" style="padding:16px">
+      <div style="background:var(--primary-soft);border-radius:var(--r-lg);padding:20px;margin-bottom:20px;text-align:center">
+        <div style="font-size:36px;margin-bottom:8px">💳</div>
+        <div style="font-size:18px;font-weight:800;color:var(--primary)">SubPay</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">منصة إدارة الاشتراكات المشتركة</div>
+      </div>
+      <div id="faq-list"></div>
+    </div>
+  </div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
