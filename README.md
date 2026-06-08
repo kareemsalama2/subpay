@@ -47,19 +47,6 @@ Open:
 http://localhost:8080
 ```
 
-## Admin
-
-Set these environment variables in production:
-
-```text
-ADMIN_EMAIL=your-admin@email.com
-ADMIN_PASSWORD=strong-admin-password
-ADMIN_NAME=SubPay Security
-IMAP_POLL_INTERVAL_SECONDS=5
-```
-
-The admin can create rooms from the web UI and enter the Gmail address plus Gmail App Password for each room.
-
 ## Deploy
 
-Use Render or Koyeb for the current Node/PWA app. Streamlit is not recommended for this project because Streamlit Community Cloud is for Python Streamlit apps, while SubPay needs a Node server with IMAP polling.
+Use Render or Koyeb for the current Node/PWA app. Configure production secrets only in the hosting dashboard, never in the public repo.

@@ -3,11 +3,11 @@
     {
       "id": "usr_admin",
       "name": "SubPay Security",
-      "email": "security@subpay.local",
+      "email": "admin@example.invalid",
       "phone": "",
       "avatar": "AD",
       "role": "admin",
-      "password": "CHANGE_ME_IN_ENV",
+      "password": "SET_IN_HOSTING_DASHBOARD",
       "language": "ar",
       "createdAt": 1780958797205
     },

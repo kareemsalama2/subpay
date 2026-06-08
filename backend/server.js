@@ -90,8 +90,12 @@ function syncDefaultImapConfig() {
 }
 
 function syncAdminAccount() {
-  const email = (process.env.ADMIN_EMAIL || "security@subpay.local").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "SubPay@2026";
+  const email = (process.env.ADMIN_EMAIL || "").toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || "";
+  if (!email || !password) {
+    console.warn("Admin account is not configured. Set ADMIN_EMAIL and ADMIN_PASSWORD.");
+    return;
+  }
   mutate((db) => {
     let user = db.users.find((item) => item.email.toLowerCase() === email);
     if (!user) {

@@ -26,30 +26,19 @@ Render أسهل كبداية:
 npm start
 ```
 
-## Environment Variables
+## أسرار الإنتاج
 
-لا ترفع أي App Password على GitHub.
+لا ترفع أي بريد أدمن أو باسورد أو Gmail App Password على GitHub.
 
-حط القيم دي في الاستضافة:
+حط أسرار الإنتاج داخل لوحة الاستضافة فقط، مثل Render Environment Variables.
 
-```txt
-NODE_ENV=production
-ADMIN_EMAIL=your-admin@email.com
-ADMIN_PASSWORD=strong-admin-password
-ADMIN_NAME=SubPay Security
-IMAP_POLL_INTERVAL_SECONDS=5
-```
-
-مفيش داعي تضيف Gmail ثابت في env. الأدمن هيضيف Gmail/App Password من شاشة إنشاء الروم.
+النسخة الإنتاجية لن تنشئ حساب أدمن تلقائيا بدون إعداد بيانات الأدمن في الاستضافة.
 
 ## بيانات الرومات
 
 الأدمن يدخل من الويب:
 
-```txt
-email: ADMIN_EMAIL
-password: ADMIN_PASSWORD
-```
+استخدم بيانات الأدمن التي وضعتها داخل لوحة الاستضافة.
 
 وبعدين يعمل روم جديد ويدخل:
 - اسم الروم
