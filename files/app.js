@@ -1,5 +1,5 @@
-// ===================================================
-// SubPay — App Logic v1.0
+﻿// ===================================================
+// SubPay â€” App Logic v1.0
 // ===================================================
 
 // ========== State ==========
@@ -12,6 +12,7 @@ const state = {
   otpInterval:          null,
   otpEventSource:       null,
   otpPollInterval:      null,
+  roomsSyncInterval:    null,
   authToken:            localStorage.getItem('subpay_token') || '',
   memberToRemove:       null,
   prevScreen:           null,
@@ -22,117 +23,117 @@ const API_BASE = `${location.origin}/api`;
 // ========== Demo Data ==========
 const DEMO_USER = {
   id: 'u1',
-  name: 'محمد أحمد',
+  name: 'Ù…Ø­Ù…Ø¯ Ø£Ø­Ù…Ø¯',
   email: 'm.ahmed@email.com',
   phone: '+201012345678',
-  avatar: 'م',
+  avatar: 'Ù…',
 };
 
 const DEMO_ROOMS = [
   {
     id: 'r1',
     name: 'ChatGPT Plus',
-    icon: '🤖',
+    icon: 'ðŸ¤–',
     iconClass: 'chatgpt',
     service: 'ChatGPT Plus',
     price: 49,
-    currency: 'جنيه',
+    currency: 'Ø¬Ù†ÙŠÙ‡',
     members: 5,
     maxMembers: 5,
     isPaid: true,
     isAdmin: false,
     username: 'group_chatgpt@mail.com',
     password: 'P@ssw0rd!123',
-    renewDate: '1 يوليو 2025',
+    renewDate: '1 ÙŠÙˆÙ„ÙŠÙˆ 2025',
     notifications: [
-      { id:'rn1', title:'تم تجديد الاشتراك', body:'تم تجديد ChatGPT Plus للشهر الجاري بنجاح.', time:'منذ يومين', type:'success', unread:false },
-      { id:'rn2', title:'OTP جديد متاح',     body:'كود تحقق جديد أُنشئ. تحقق من تبويب بيانات الاشتراك.', time:'منذ ساعة', type:'info', unread:true },
+      { id:'rn1', title:'ØªÙ… ØªØ¬Ø¯ÙŠØ¯ Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ', body:'ØªÙ… ØªØ¬Ø¯ÙŠØ¯ ChatGPT Plus Ù„Ù„Ø´Ù‡Ø± Ø§Ù„Ø¬Ø§Ø±ÙŠ Ø¨Ù†Ø¬Ø§Ø­.', time:'Ù…Ù†Ø° ÙŠÙˆÙ…ÙŠÙ†', type:'success', unread:false },
+      { id:'rn2', title:'OTP Ø¬Ø¯ÙŠØ¯ Ù…ØªØ§Ø­',     body:'ÙƒÙˆØ¯ ØªØ­Ù‚Ù‚ Ø¬Ø¯ÙŠØ¯ Ø£ÙÙ†Ø´Ø¦. ØªØ­Ù‚Ù‚ Ù…Ù† ØªØ¨ÙˆÙŠØ¨ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ.', time:'Ù…Ù†Ø° Ø³Ø§Ø¹Ø©', type:'info', unread:true },
     ],
     membersList: [
-      { id:'m1', name:'أحمد محمود',  email:'ahmed@mail.com',      role:'owner',  paid:true,  avatar:'أ' },
-      { id:'m2', name:'محمد أحمد',   email:'m.ahmed@email.com',   role:'member', paid:true,  avatar:'م' },
-      { id:'m3', name:'سارة خالد',   email:'sara@mail.com',       role:'member', paid:true,  avatar:'س' },
-      { id:'m4', name:'عمر علي',     email:'omar@mail.com',       role:'member', paid:false, avatar:'ع' },
-      { id:'m5', name:'ريم حسن',     email:'reem@mail.com',       role:'member', paid:true,  avatar:'ر' },
+      { id:'m1', name:'Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…ÙˆØ¯',  email:'ahmed@mail.com',      role:'owner',  paid:true,  avatar:'Ø£' },
+      { id:'m2', name:'Ù…Ø­Ù…Ø¯ Ø£Ø­Ù…Ø¯',   email:'m.ahmed@email.com',   role:'member', paid:true,  avatar:'Ù…' },
+      { id:'m3', name:'Ø³Ø§Ø±Ø© Ø®Ø§Ù„Ø¯',   email:'sara@mail.com',       role:'member', paid:true,  avatar:'Ø³' },
+      { id:'m4', name:'Ø¹Ù…Ø± Ø¹Ù„ÙŠ',     email:'omar@mail.com',       role:'member', paid:false, avatar:'Ø¹' },
+      { id:'m5', name:'Ø±ÙŠÙ… Ø­Ø³Ù†',     email:'reem@mail.com',       role:'member', paid:true,  avatar:'Ø±' },
     ],
   },
   {
     id: 'r2',
     name: 'Netflix',
-    icon: '🎬',
+    icon: 'ðŸŽ¬',
     iconClass: 'netflix',
     service: 'Netflix Standard',
     price: 99,
-    currency: 'جنيه',
+    currency: 'Ø¬Ù†ÙŠÙ‡',
     members: 4,
     maxMembers: 4,
     isPaid: false,
     isAdmin: true,
     username: 'netflix_group@mail.com',
     password: 'Netflix#2025!',
-    renewDate: '15 يونيو 2025',
+    renewDate: '15 ÙŠÙˆÙ†ÙŠÙˆ 2025',
     notifications: [
-      { id:'rn3', title:'تذكير بالدفع', body:'موعد تجديد Netflix يقترب. يرجى الدفع قبل 15 يونيو لتجنب قطع الخدمة.', time:'منذ 3 أيام', type:'warning', unread:true },
+      { id:'rn3', title:'ØªØ°ÙƒÙŠØ± Ø¨Ø§Ù„Ø¯ÙØ¹', body:'Ù…ÙˆØ¹Ø¯ ØªØ¬Ø¯ÙŠØ¯ Netflix ÙŠÙ‚ØªØ±Ø¨. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ø¯ÙØ¹ Ù‚Ø¨Ù„ 15 ÙŠÙˆÙ†ÙŠÙˆ Ù„ØªØ¬Ù†Ø¨ Ù‚Ø·Ø¹ Ø§Ù„Ø®Ø¯Ù…Ø©.', time:'Ù…Ù†Ø° 3 Ø£ÙŠØ§Ù…', type:'warning', unread:true },
     ],
     membersList: [
-      { id:'m6', name:'محمد أحمد',  email:'m.ahmed@email.com', role:'admin',  paid:false, avatar:'م' },
-      { id:'m7', name:'لينا سامي',  email:'lena@mail.com',     role:'member', paid:true,  avatar:'ل' },
-      { id:'m8', name:'خالد يوسف', email:'khaled@mail.com',   role:'member', paid:false, avatar:'خ' },
-      { id:'m9', name:'منى طارق',  email:'mona@mail.com',     role:'member', paid:true,  avatar:'ن' },
+      { id:'m6', name:'Ù…Ø­Ù…Ø¯ Ø£Ø­Ù…Ø¯',  email:'m.ahmed@email.com', role:'admin',  paid:false, avatar:'Ù…' },
+      { id:'m7', name:'Ù„ÙŠÙ†Ø§ Ø³Ø§Ù…ÙŠ',  email:'lena@mail.com',     role:'member', paid:true,  avatar:'Ù„' },
+      { id:'m8', name:'Ø®Ø§Ù„Ø¯ ÙŠÙˆØ³Ù', email:'khaled@mail.com',   role:'member', paid:false, avatar:'Ø®' },
+      { id:'m9', name:'Ù…Ù†Ù‰ Ø·Ø§Ø±Ù‚',  email:'mona@mail.com',     role:'member', paid:true,  avatar:'Ù†' },
     ],
   },
   {
     id: 'r3',
     name: 'Spotify',
-    icon: '🎵',
+    icon: 'ðŸŽµ',
     iconClass: 'default',
     service: 'Spotify Premium',
     price: 35,
-    currency: 'جنيه',
+    currency: 'Ø¬Ù†ÙŠÙ‡',
     members: 3,
     maxMembers: 6,
     isPaid: true,
     isAdmin: false,
     username: 'spotify_fam@mail.com',
     password: 'Sp0tify$2025',
-    renewDate: '20 يونيو 2025',
+    renewDate: '20 ÙŠÙˆÙ†ÙŠÙˆ 2025',
     notifications: [],
     membersList: [
-      { id:'m10', name:'يوسف حمدي',  email:'youssef@mail.com', role:'owner',  paid:true, avatar:'ي' },
-      { id:'m11', name:'محمد أحمد',  email:'m.ahmed@email.com',role:'member', paid:true, avatar:'م' },
-      { id:'m12', name:'هدى مصطفى', email:'hoda@mail.com',    role:'member', paid:true, avatar:'ه' },
+      { id:'m10', name:'ÙŠÙˆØ³Ù Ø­Ù…Ø¯ÙŠ',  email:'youssef@mail.com', role:'owner',  paid:true, avatar:'ÙŠ' },
+      { id:'m11', name:'Ù…Ø­Ù…Ø¯ Ø£Ø­Ù…Ø¯',  email:'m.ahmed@email.com',role:'member', paid:true, avatar:'Ù…' },
+      { id:'m12', name:'Ù‡Ø¯Ù‰ Ù…ØµØ·ÙÙ‰', email:'hoda@mail.com',    role:'member', paid:true, avatar:'Ù‡' },
     ],
   },
 ];
 
 const DEMO_NOTIFICATIONS = [
-  { id:'gn1', title:'مرحباً بك في SubPay 🎉',      body:'تم تفعيل حسابك بنجاح. ابدأ بالانضمام لروم أو إنشاء روم جديدة.',             time:'منذ أسبوع',  type:'success', unread:false },
-  { id:'gn2', title:'تذكير: Netflix غير مدفوع',   body:'اشتراك Netflix يستحق الدفع قبل 15 يونيو. اضغط لدفع الآن.',                   time:'منذ 3 أيام', type:'warning', unread:true  },
-  { id:'gn3', title:'OTP جديد — ChatGPT Plus',    body:'كود تحقق جديد متاح في روم ChatGPT Plus.',                                     time:'منذ ساعة',   type:'info',    unread:true  },
+  { id:'gn1', title:'Ù…Ø±Ø­Ø¨Ø§Ù‹ Ø¨Ùƒ ÙÙŠ SubPay ðŸŽ‰',      body:'ØªÙ… ØªÙØ¹ÙŠÙ„ Ø­Ø³Ø§Ø¨Ùƒ Ø¨Ù†Ø¬Ø§Ø­. Ø§Ø¨Ø¯Ø£ Ø¨Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ù„Ø±ÙˆÙ… Ø£Ùˆ Ø¥Ù†Ø´Ø§Ø¡ Ø±ÙˆÙ… Ø¬Ø¯ÙŠØ¯Ø©.',             time:'Ù…Ù†Ø° Ø£Ø³Ø¨ÙˆØ¹',  type:'success', unread:false },
+  { id:'gn2', title:'ØªØ°ÙƒÙŠØ±: Netflix ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹',   body:'Ø§Ø´ØªØ±Ø§Ùƒ Netflix ÙŠØ³ØªØ­Ù‚ Ø§Ù„Ø¯ÙØ¹ Ù‚Ø¨Ù„ 15 ÙŠÙˆÙ†ÙŠÙˆ. Ø§Ø¶ØºØ· Ù„Ø¯ÙØ¹ Ø§Ù„Ø¢Ù†.',                   time:'Ù…Ù†Ø° 3 Ø£ÙŠØ§Ù…', type:'warning', unread:true  },
+  { id:'gn3', title:'OTP Ø¬Ø¯ÙŠØ¯ â€” ChatGPT Plus',    body:'ÙƒÙˆØ¯ ØªØ­Ù‚Ù‚ Ø¬Ø¯ÙŠØ¯ Ù…ØªØ§Ø­ ÙÙŠ Ø±ÙˆÙ… ChatGPT Plus.',                                     time:'Ù…Ù†Ø° Ø³Ø§Ø¹Ø©',   type:'info',    unread:true  },
 ];
 
 const DEMO_HISTORY = [
-  { id:'h1', room:'ChatGPT Plus',     amount:49,  date:'1 مايو 2025',    method:'InstaPay',        status:'success' },
-  { id:'h2', room:'Spotify Premium',  amount:35,  date:'20 أبريل 2025',  method:'المحفظة',          status:'success' },
-  { id:'h3', room:'Netflix Standard', amount:99,  date:'15 أبريل 2025',  method:'بطاقة بنكية',     status:'failed'  },
-  { id:'h4', room:'ChatGPT Plus',     amount:49,  date:'1 أبريل 2025',   method:'InstaPay',        status:'success' },
+  { id:'h1', room:'ChatGPT Plus',     amount:49,  date:'1 Ù…Ø§ÙŠÙˆ 2025',    method:'InstaPay',        status:'success' },
+  { id:'h2', room:'Spotify Premium',  amount:35,  date:'20 Ø£Ø¨Ø±ÙŠÙ„ 2025',  method:'Ø§Ù„Ù…Ø­ÙØ¸Ø©',          status:'success' },
+  { id:'h3', room:'Netflix Standard', amount:99,  date:'15 Ø£Ø¨Ø±ÙŠÙ„ 2025',  method:'Ø¨Ø·Ø§Ù‚Ø© Ø¨Ù†ÙƒÙŠØ©',     status:'failed'  },
+  { id:'h4', room:'ChatGPT Plus',     amount:49,  date:'1 Ø£Ø¨Ø±ÙŠÙ„ 2025',   method:'InstaPay',        status:'success' },
 ];
 
 const FAQ_ITEMS = [
-  { q:'ما هو SubPay؟',
-    a:'SubPay منصة لإدارة الاشتراكات المشتركة. يمكنك إنشاء "روم" لأي خدمة اشتراك وإضافة أعضاء يتشاركون معك تكلفة الاشتراك وبيانات الوصول.' },
-  { q:'كيف أنضم لروم؟',
-    a:'اضغط على زر "انضم لروم" في الصفحة الرئيسية وأدخل كود الدعوة الذي أرسله لك الأدمن. الكود عبارة عن 4-12 حرف/رقم.' },
-  { q:'ماذا يحدث لو لم أدفع في الموعد؟',
-    a:'سيتم إيقاف وصولك لبيانات الروم (كلمة المرور والـ OTP) تلقائياً حتى تُجدّد اشتراكك. باقي الأعضاء لن يتأثروا.' },
-  { q:'هل بياناتي آمنة؟',
-    a:'نعم، SubPay يستخدم تشفير SSL لجميع الاتصالات. البيانات الحساسة مشفرة في قاعدة البيانات. أي وصول لبيانات الروم قد يُسجَّل لأغراض أمنية.' },
-  { q:'ما طرق الدفع المتاحة؟',
-    a:'InstaPay، المحفظة الإلكترونية (Vodafone Cash / Orange Cash)، والبطاقة البنكية (Visa / Mastercard).' },
-  { q:'كيف أتواصل مع الدعم؟',
-    a:'يمكنك التواصل معنا عبر البريد الإلكتروني support@subpay.app أو من خلال قسم المساعدة داخل التطبيق. نرد خلال 24 ساعة.' },
-  { q:'هل يمكنني إنشاء روم جديدة؟',
-    a:'إنشاء الرومات متاح حالياً للمشتركين في خطة الأدمن. تواصل معنا عبر الدعم لمعرفة التفاصيل.' },
+  { q:'Ù…Ø§ Ù‡Ùˆ SubPayØŸ',
+    a:'SubPay Ù…Ù†ØµØ© Ù„Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø§Ø´ØªØ±Ø§ÙƒØ§Øª Ø§Ù„Ù…Ø´ØªØ±ÙƒØ©. ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ù†Ø´Ø§Ø¡ "Ø±ÙˆÙ…" Ù„Ø£ÙŠ Ø®Ø¯Ù…Ø© Ø§Ø´ØªØ±Ø§Ùƒ ÙˆØ¥Ø¶Ø§ÙØ© Ø£Ø¹Ø¶Ø§Ø¡ ÙŠØªØ´Ø§Ø±ÙƒÙˆÙ† Ù…Ø¹Ùƒ ØªÙƒÙ„ÙØ© Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ ÙˆØ¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ÙˆØµÙˆÙ„.' },
+  { q:'ÙƒÙŠÙ Ø£Ù†Ø¶Ù… Ù„Ø±ÙˆÙ…ØŸ',
+    a:'Ø§Ø¶ØºØ· Ø¹Ù„Ù‰ Ø²Ø± "Ø§Ù†Ø¶Ù… Ù„Ø±ÙˆÙ…" ÙÙŠ Ø§Ù„ØµÙØ­Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ© ÙˆØ£Ø¯Ø®Ù„ ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ© Ø§Ù„Ø°ÙŠ Ø£Ø±Ø³Ù„Ù‡ Ù„Ùƒ Ø§Ù„Ø£Ø¯Ù…Ù†. Ø§Ù„ÙƒÙˆØ¯ Ø¹Ø¨Ø§Ø±Ø© Ø¹Ù† 4-12 Ø­Ø±Ù/Ø±Ù‚Ù….' },
+  { q:'Ù…Ø§Ø°Ø§ ÙŠØ­Ø¯Ø« Ù„Ùˆ Ù„Ù… Ø£Ø¯ÙØ¹ ÙÙŠ Ø§Ù„Ù…ÙˆØ¹Ø¯ØŸ',
+    a:'Ø³ÙŠØªÙ… Ø¥ÙŠÙ‚Ø§Ù ÙˆØµÙˆÙ„Ùƒ Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±ÙˆÙ… (ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± ÙˆØ§Ù„Ù€ OTP) ØªÙ„Ù‚Ø§Ø¦ÙŠØ§Ù‹ Ø­ØªÙ‰ ØªÙØ¬Ø¯Ù‘Ø¯ Ø§Ø´ØªØ±Ø§ÙƒÙƒ. Ø¨Ø§Ù‚ÙŠ Ø§Ù„Ø£Ø¹Ø¶Ø§Ø¡ Ù„Ù† ÙŠØªØ£Ø«Ø±ÙˆØ§.' },
+  { q:'Ù‡Ù„ Ø¨ÙŠØ§Ù†Ø§ØªÙŠ Ø¢Ù…Ù†Ø©ØŸ',
+    a:'Ù†Ø¹Ù…ØŒ SubPay ÙŠØ³ØªØ®Ø¯Ù… ØªØ´ÙÙŠØ± SSL Ù„Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø§ØªØµØ§Ù„Ø§Øª. Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø­Ø³Ø§Ø³Ø© Ù…Ø´ÙØ±Ø© ÙÙŠ Ù‚Ø§Ø¹Ø¯Ø© Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª. Ø£ÙŠ ÙˆØµÙˆÙ„ Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±ÙˆÙ… Ù‚Ø¯ ÙŠÙØ³Ø¬ÙŽÙ‘Ù„ Ù„Ø£ØºØ±Ø§Ø¶ Ø£Ù…Ù†ÙŠØ©.' },
+  { q:'Ù…Ø§ Ø·Ø±Ù‚ Ø§Ù„Ø¯ÙØ¹ Ø§Ù„Ù…ØªØ§Ø­Ø©ØŸ',
+    a:'InstaPayØŒ Ø§Ù„Ù…Ø­ÙØ¸Ø© Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠØ© (Vodafone Cash / Orange Cash)ØŒ ÙˆØ§Ù„Ø¨Ø·Ø§Ù‚Ø© Ø§Ù„Ø¨Ù†ÙƒÙŠØ© (Visa / Mastercard).' },
+  { q:'ÙƒÙŠÙ Ø£ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ø§Ù„Ø¯Ø¹Ù…ØŸ',
+    a:'ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹Ù†Ø§ Ø¹Ø¨Ø± Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ support@subpay.app Ø£Ùˆ Ù…Ù† Ø®Ù„Ø§Ù„ Ù‚Ø³Ù… Ø§Ù„Ù…Ø³Ø§Ø¹Ø¯Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚. Ù†Ø±Ø¯ Ø®Ù„Ø§Ù„ 24 Ø³Ø§Ø¹Ø©.' },
+  { q:'Ù‡Ù„ ÙŠÙ…ÙƒÙ†Ù†ÙŠ Ø¥Ù†Ø´Ø§Ø¡ Ø±ÙˆÙ… Ø¬Ø¯ÙŠØ¯Ø©ØŸ',
+    a:'Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…Ø§Øª Ù…ØªØ§Ø­ Ø­Ø§Ù„ÙŠØ§Ù‹ Ù„Ù„Ù…Ø´ØªØ±ÙƒÙŠÙ† ÙÙŠ Ø®Ø·Ø© Ø§Ù„Ø£Ø¯Ù…Ù†. ØªÙˆØ§ØµÙ„ Ù…Ø¹Ù†Ø§ Ø¹Ø¨Ø± Ø§Ù„Ø¯Ø¹Ù… Ù„Ù…Ø¹Ø±ÙØ© Ø§Ù„ØªÙØ§ØµÙŠÙ„.' },
 ];
 
 // ===================================================
@@ -158,10 +159,10 @@ async function apiFetch(path, options = {}) {
 
 function roomIconFor(name = '') {
   const lower = name.toLowerCase();
-  if (lower.includes('chatgpt') || lower.includes('gpt')) return { icon: '🤖', iconClass: 'chatgpt' };
-  if (lower.includes('netflix')) return { icon: '🎬', iconClass: 'netflix' };
-  if (lower.includes('spotify')) return { icon: '🎵', iconClass: 'default' };
-  return { icon: '💳', iconClass: 'default' };
+  if (lower.includes('chatgpt') || lower.includes('gpt')) return { icon: 'ðŸ¤–', iconClass: 'chatgpt' };
+  if (lower.includes('netflix')) return { icon: 'ðŸŽ¬', iconClass: 'netflix' };
+  if (lower.includes('spotify')) return { icon: 'ðŸŽµ', iconClass: 'default' };
+  return { icon: 'ðŸ’³', iconClass: 'default' };
 }
 
 function normalizeBackendRoom(room) {
@@ -178,29 +179,29 @@ function normalizeBackendRoom(room) {
     code: room.code,
     ...icon,
     price: room.monthlyPrice || 0,
-    currency: 'جنيه',
+    currency: 'Ø¬Ù†ÙŠÙ‡',
     members: members.length,
     maxMembers: Math.max(members.length, 5),
     isPaid: true,
     isAdmin: ['owner', 'admin'].includes(room.role),
     username: room.subscriptionEmail || room.inboundEmail || '',
     password: room.password || '',
-    renewDate: room.paidUntil || 'غير محدد',
+    renewDate: room.paidUntil || 'ØºÙŠØ± Ù…Ø­Ø¯Ø¯',
     latestOtp: latestOtpMessage?.otp || null,
     latestOtpMessageId: latestOtpMessage?.id || null,
     latestOtpCreatedAt: latestOtpMessage?.createdAt || null,
     latestOtpExpiresAt: latestOtpMessage?.otpExpiresAt || null,
     notifications: messages.slice(0, 10).map((message) => ({
       id: message.id,
-      title: message.otp ? `OTP جديد — ${room.name}` : (message.subject || 'رسالة واردة'),
-      body: message.otp ? `كود التحقق الجديد: ${message.otp}` : (message.body || ''),
+      title: message.otp ? `OTP Ø¬Ø¯ÙŠØ¯ â€” ${room.name}` : (message.subject || 'Ø±Ø³Ø§Ù„Ø© ÙˆØ§Ø±Ø¯Ø©'),
+      body: message.otp ? `ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„Ø¬Ø¯ÙŠØ¯: ${message.otp}` : (message.body || ''),
       time: formatRelativeTime(message.createdAt),
       type: message.otp ? 'info' : 'success',
       unread: false,
     })),
     membersList: members.map((member) => ({
       id: member.id,
-      name: member.user?.name || 'عضو',
+      name: member.user?.name || 'Ø¹Ø¶Ùˆ',
       email: member.user?.email || '',
       role: member.role,
       paid: Boolean(member.paidUntil),
@@ -212,11 +213,11 @@ function normalizeBackendRoom(room) {
 function formatRelativeTime(ts) {
   const diff = Math.max(0, Date.now() - Number(ts || Date.now()));
   const min = Math.floor(diff / 60000);
-  if (min < 1) return 'الآن';
-  if (min < 60) return `منذ ${min} دقيقة`;
+  if (min < 1) return 'Ø§Ù„Ø¢Ù†';
+  if (min < 60) return `Ù…Ù†Ø° ${min} Ø¯Ù‚ÙŠÙ‚Ø©`;
   const hours = Math.floor(min / 60);
-  if (hours < 24) return `منذ ${hours} ساعة`;
-  return `منذ ${Math.floor(hours / 24)} يوم`;
+  if (hours < 24) return `Ù…Ù†Ø° ${hours} Ø³Ø§Ø¹Ø©`;
+  return `Ù…Ù†Ø° ${Math.floor(hours / 24)} ÙŠÙˆÙ…`;
 }
 
 function formatExactTime(ts) {
@@ -225,10 +226,10 @@ function formatExactTime(ts) {
 }
 
 function formatOtpStatus(message) {
-  if (!message?.otp) return 'بانتظار OTP';
+  if (!message?.otp) return 'Ø¨Ø§Ù†ØªØ¸Ø§Ø± OTP';
   const arrived = formatExactTime(message.createdAt);
   const expired = message.otpExpiresAt && Date.now() > Number(message.otpExpiresAt);
-  return `${expired ? 'انتهى' : 'وصل'}${arrived ? ` الساعة ${arrived}` : ''}`;
+  return `${expired ? 'Ø§Ù†ØªÙ‡Ù‰' : 'ÙˆØµÙ„'}${arrived ? ` Ø§Ù„Ø³Ø§Ø¹Ø© ${arrived}` : ''}`;
 }
 
 async function syncBackendRooms() {
@@ -237,6 +238,7 @@ async function syncBackendRooms() {
     const rooms = (data.rooms || []).map(normalizeBackendRoom);
     state.rooms = rooms;
     renderRoomsList();
+    if (state.currentUser) loadHomeScreen();
     if (state.currentRoom) {
       const updated = state.rooms.find((room) => room.id === state.currentRoom.id);
       if (updated) state.currentRoom = updated;
@@ -244,6 +246,13 @@ async function syncBackendRooms() {
   } catch (error) {
     console.warn('Backend rooms sync skipped:', error.message);
   }
+}
+
+function startRoomsSyncLoop() {
+  if (state.roomsSyncInterval) clearInterval(state.roomsSyncInterval);
+  state.roomsSyncInterval = setInterval(() => {
+    if (state.currentUser && state.authToken) syncBackendRooms();
+  }, 30000);
 }
 
 async function loginWithBackend(email, password, name) {
@@ -305,7 +314,7 @@ function applyOtpMessage(message) {
   const timeEl = document.getElementById('otp-time-left');
   const barEl = document.getElementById('otp-bar');
   if (codeEl) codeEl.textContent = message.otp;
-  if (timeEl) timeEl.textContent = 'وصل الآن';
+  if (timeEl) timeEl.textContent = 'ÙˆØµÙ„ Ø§Ù„Ø¢Ù†';
   if (barEl) {
     barEl.style.width = '100%';
     barEl.style.background = 'var(--success)';
@@ -317,9 +326,9 @@ function applyOtpMessage(message) {
     state.currentRoom.notifications = [
       {
         id: message.id,
-        title: `OTP جديد — ${state.currentRoom.name}`,
-        body: `كود التحقق الجديد: ${message.otp}`,
-        time: 'الآن',
+        title: `OTP Ø¬Ø¯ÙŠØ¯ â€” ${state.currentRoom.name}`,
+        body: `ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„Ø¬Ø¯ÙŠØ¯: ${message.otp}`,
+        time: 'Ø§Ù„Ø¢Ù†',
         type: 'info',
         unread: true,
       },
@@ -327,7 +336,7 @@ function applyOtpMessage(message) {
     ];
     renderRoomNotifications(state.currentRoom);
   }
-  showToast(`OTP جديد: ${message.otp}`, 'success');
+  showToast(`OTP Ø¬Ø¯ÙŠØ¯: ${message.otp}`, 'success');
 }
 
 function applyOtpMessageDedup(message) {
@@ -355,8 +364,8 @@ function applyOtpMessageDedup(message) {
       state.currentRoom.notifications = [
         {
           id: message.id,
-          title: `OTP جديد — ${state.currentRoom.name}`,
-          body: `كود التحقق الجديد: ${message.otp} (${formatOtpStatus(message)})`,
+          title: `OTP Ø¬Ø¯ÙŠØ¯ â€” ${state.currentRoom.name}`,
+          body: `ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„Ø¬Ø¯ÙŠØ¯: ${message.otp} (${formatOtpStatus(message)})`,
           time: formatRelativeTime(message.createdAt),
           type: 'info',
           unread: true,
@@ -366,7 +375,7 @@ function applyOtpMessageDedup(message) {
       renderRoomNotifications(state.currentRoom);
     }
   }
-  if (isNewMessage) showToast(`OTP جديد: ${message.otp}`, 'success');
+  if (isNewMessage) showToast(`OTP Ø¬Ø¯ÙŠØ¯: ${message.otp}`, 'success');
 }
 
 function applyRoomMessage(message) {
@@ -381,7 +390,7 @@ function applyRoomMessage(message) {
   state.currentRoom.notifications = [
     {
       id: message.id,
-      title: message.subject || 'رسالة جديدة',
+      title: message.subject || 'Ø±Ø³Ø§Ù„Ø© Ø¬Ø¯ÙŠØ¯Ø©',
       body: message.body || '',
       time: formatRelativeTime(message.createdAt),
       type: message.type === 'admin' ? 'success' : 'info',
@@ -390,7 +399,7 @@ function applyRoomMessage(message) {
     ...(state.currentRoom.notifications || []),
   ];
   renderRoomNotifications(state.currentRoom);
-  showToast(message.subject || 'رسالة جديدة', 'info');
+  showToast(message.subject || 'Ø±Ø³Ø§Ù„Ø© Ø¬Ø¯ÙŠØ¯Ø©', 'info');
 }
 
 async function loadLatestBackendOtp(room) {
@@ -443,7 +452,7 @@ function connectRoomOtpRealtime(room) {
   });
   state.otpEventSource.onerror = () => {
     const timeEl = document.getElementById('otp-time-left');
-    if (timeEl) timeEl.textContent = 'إعادة الاتصال...';
+    if (timeEl) timeEl.textContent = 'Ø¥Ø¹Ø§Ø¯Ø© Ø§Ù„Ø§ØªØµØ§Ù„...';
   };
   startRoomOtpPolling(room);
 }
@@ -476,7 +485,7 @@ function setActiveNav(navKey) {
 }
 
 // ===================================================
-// Auth — Login
+// Auth â€” Login
 // ===================================================
 async function handleLogin() {
   const email = document.getElementById('login-email').value.trim();
@@ -487,12 +496,12 @@ async function handleLogin() {
   clearFieldError('login-password');
 
   if (!email) {
-    showFieldError('login-email', 'البريد الإلكتروني مطلوب'); valid = false;
+    showFieldError('login-email', 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ Ù…Ø·Ù„ÙˆØ¨'); valid = false;
   } else if (!isValidEmail(email)) {
-    showFieldError('login-email', 'بريد إلكتروني غير صحيح'); valid = false;
+    showFieldError('login-email', 'Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ­ÙŠØ­'); valid = false;
   }
   if (!pass) {
-    showFieldError('login-password', 'كلمة المرور مطلوبة'); valid = false;
+    showFieldError('login-password', 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ù…Ø·Ù„ÙˆØ¨Ø©'); valid = false;
   }
   if (!valid) return;
 
@@ -503,15 +512,15 @@ async function handleLogin() {
     const backendSession = await loginWithBackend(email, pass, DEMO_USER.name);
     setButtonLoading(btn, false);
     loginSuccess(backendSession.user, backendSession.rooms, []);
-    showToast('أهلاً بك في SubPay ✅', 'success');
+    showToast('Ø£Ù‡Ù„Ø§Ù‹ Ø¨Ùƒ ÙÙŠ SubPay âœ…', 'success');
   } catch (error) {
     setButtonLoading(btn, false);
-    showToast('بيانات الدخول غير صحيحة أو السيرفر غير متاح', 'error');
+    showToast('Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¯Ø®ÙˆÙ„ ØºÙŠØ± ØµØ­ÙŠØ­Ø© Ø£Ùˆ Ø§Ù„Ø³ÙŠØ±ÙØ± ØºÙŠØ± Ù…ØªØ§Ø­', 'error');
   }
 }
 
 function handleGoogleLogin() {
-  showToast('تسجيل الدخول بجوجل غير مفعل حالياً. استخدم البريد وكلمة المرور.', 'warning', 5000);
+  showToast('ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø¨Ø¬ÙˆØ¬Ù„ ØºÙŠØ± Ù…ÙØ¹Ù„ Ø­Ø§Ù„ÙŠØ§Ù‹. Ø§Ø³ØªØ®Ø¯Ù… Ø§Ù„Ø¨Ø±ÙŠØ¯ ÙˆÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±.', 'warning', 5000);
 }
 
 function loginSuccess(user, rooms, notifs) {
@@ -522,10 +531,11 @@ function loginSuccess(user, rooms, notifs) {
   navigateTo('screen-home');
   setActiveNav('home');
   syncBackendRooms();
+  startRoomsSyncLoop();
 }
 
 // ===================================================
-// Auth — Register
+// Auth â€” Register
 // ===================================================
 async function handleRegister() {
   const name  = document.getElementById('reg-name').value.trim();
@@ -534,13 +544,13 @@ async function handleRegister() {
   const pass  = document.getElementById('reg-password').value.trim();
 
   if (!name || !phone || !email || !pass) {
-    showToast('يرجى تعبئة جميع الحقول', 'error'); return;
+    showToast('ÙŠØ±Ø¬Ù‰ ØªØ¹Ø¨Ø¦Ø© Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø­Ù‚ÙˆÙ„', 'error'); return;
   }
   if (!isValidEmail(email)) {
-    showToast('بريد إلكتروني غير صحيح', 'error'); return;
+    showToast('Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ­ÙŠØ­', 'error'); return;
   }
   if (pass.length < 6) {
-    showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error'); return;
+    showToast('ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± ÙŠØ¬Ø¨ Ø£Ù† ØªÙƒÙˆÙ† 6 Ø£Ø­Ø±Ù Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„', 'error'); return;
   }
 
   const btn = document.getElementById('btn-register');
@@ -550,33 +560,33 @@ async function handleRegister() {
     const session = await registerWithBackend({ name, phone, email, password: pass });
     setButtonLoading(btn, false);
     loginSuccess(session.user, session.rooms, []);
-    showToast('تم إنشاء حسابك بنجاح 🎉', 'success');
+    showToast('ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨Ùƒ Ø¨Ù†Ø¬Ø§Ø­ ðŸŽ‰', 'success');
   } catch (error) {
     setButtonLoading(btn, false);
-    showToast(error.message || 'فشل إنشاء الحساب', 'error');
+    showToast(error.message || 'ÙØ´Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø­Ø³Ø§Ø¨', 'error');
   }
 }
 
 // ===================================================
-// Auth — Forgot Password (3-step flow)
+// Auth â€” Forgot Password (3-step flow)
 // ===================================================
 let forgotStep = 0;
 
 function handleForgotSend() {
   const email = document.getElementById('forgot-email').value.trim();
   if (!email || !isValidEmail(email)) {
-    showToast('يرجى إدخال بريد إلكتروني صحيح', 'error'); return;
+    showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØµØ­ÙŠØ­', 'error'); return;
   }
-  showToast('تم إرسال كود التحقق ✉️', 'success');
+  showToast('ØªÙ… Ø¥Ø±Ø³Ø§Ù„ ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ âœ‰ï¸', 'success');
   setForgotStep(1);
 }
 
 function handleForgotVerify() {
   const code = document.getElementById('forgot-code').value.trim();
   if (code.length < 4) {
-    showToast('يرجى إدخال الكود الكامل', 'error'); return;
+    showToast('ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„ÙƒÙˆØ¯ Ø§Ù„ÙƒØ§Ù…Ù„', 'error'); return;
   }
-  showToast('تم التحقق من الكود ✅', 'success');
+  showToast('ØªÙ… Ø§Ù„ØªØ­Ù‚Ù‚ Ù…Ù† Ø§Ù„ÙƒÙˆØ¯ âœ…', 'success');
   setForgotStep(2);
 }
 
@@ -584,12 +594,12 @@ function handleResetPassword() {
   const p1 = document.getElementById('forgot-new-pass').value;
   const p2 = document.getElementById('forgot-confirm-pass').value;
   if (!p1 || p1.length < 6) {
-    showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error'); return;
+    showToast('ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± ÙŠØ¬Ø¨ Ø£Ù† ØªÙƒÙˆÙ† 6 Ø£Ø­Ø±Ù Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„', 'error'); return;
   }
   if (p1 !== p2) {
-    showToast('كلمتا المرور غير متطابقتين', 'error'); return;
+    showToast('ÙƒÙ„Ù…ØªØ§ Ø§Ù„Ù…Ø±ÙˆØ± ØºÙŠØ± Ù…ØªØ·Ø§Ø¨Ù‚ØªÙŠÙ†', 'error'); return;
   }
-  showToast('تم تغيير كلمة المرور بنجاح 🔒', 'success');
+  showToast('ØªÙ… ØªØºÙŠÙŠØ± ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø¨Ù†Ø¬Ø§Ø­ ðŸ”’', 'success');
   setForgotStep(0);
   document.getElementById('forgot-email').value = '';
   document.getElementById('forgot-code').value  = '';
@@ -608,8 +618,8 @@ function setForgotStep(step) {
     dot.classList.toggle('active', i === step);
     dot.classList.toggle('done',   i < step);
   });
-  const titles = ['استعادة كلمة المرور 🔑', 'أدخل كود التحقق 🔐', 'كلمة مرور جديدة ✨'];
-  const subs   = ['أدخل بريدك لإرسال كود الاستعادة', 'تحقق من بريدك الإلكتروني', 'اختر كلمة مرور جديدة وآمنة'];
+  const titles = ['Ø§Ø³ØªØ¹Ø§Ø¯Ø© ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± ðŸ”‘', 'Ø£Ø¯Ø®Ù„ ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ ðŸ”', 'ÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ± Ø¬Ø¯ÙŠØ¯Ø© âœ¨'];
+  const subs   = ['Ø£Ø¯Ø®Ù„ Ø¨Ø±ÙŠØ¯Ùƒ Ù„Ø¥Ø±Ø³Ø§Ù„ ÙƒÙˆØ¯ Ø§Ù„Ø§Ø³ØªØ¹Ø§Ø¯Ø©', 'ØªØ­Ù‚Ù‚ Ù…Ù† Ø¨Ø±ÙŠØ¯Ùƒ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ', 'Ø§Ø®ØªØ± ÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ± Ø¬Ø¯ÙŠØ¯Ø© ÙˆØ¢Ù…Ù†Ø©'];
   const t = document.getElementById('forgot-title');
   const s = document.getElementById('forgot-subtitle');
   if (t) t.textContent = titles[step];
@@ -619,10 +629,14 @@ function setForgotStep(step) {
 function handleLogout() {
   // Stop OTP timer
   if (state.otpInterval) { clearInterval(state.otpInterval); state.otpInterval = null; }
+  closeOtpRealtime();
+  if (state.roomsSyncInterval) { clearInterval(state.roomsSyncInterval); state.roomsSyncInterval = null; }
+  state.authToken = '';
+  localStorage.removeItem('subpay_token');
   state.currentUser  = null;
   state.rooms        = [];
   state.currentRoom  = null;
-  showToast('تم تسجيل الخروج بنجاح', 'info');
+  showToast('ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬ Ø¨Ù†Ø¬Ø§Ø­', 'info');
   navigateTo('screen-login');
 }
 
@@ -674,13 +688,13 @@ function renderRoomsList() {
             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
           </svg>
         </div>
-        <div class="empty-title">لا توجد روم بعد</div>
-        <div class="empty-subtitle">انضم لروم بكود دعوة من الأدمن</div>
+        <div class="empty-title">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø±ÙˆÙ… Ø¨Ø¹Ø¯</div>
+        <div class="empty-subtitle">Ø§Ù†Ø¶Ù… Ù„Ø±ÙˆÙ… Ø¨ÙƒÙˆØ¯ Ø¯Ø¹ÙˆØ© Ù…Ù† Ø§Ù„Ø£Ø¯Ù…Ù†</div>
         <button class="btn btn-primary" style="max-width:200px;margin-top:8px" onclick="openModal('modal-join')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          انضم لروم
+          Ø§Ù†Ø¶Ù… Ù„Ø±ÙˆÙ…
         </button>
       </div>`;
     return;
@@ -691,13 +705,13 @@ function renderRoomsList() {
       <div class="room-icon ${room.iconClass}">${room.icon}</div>
       <div class="room-info">
         <div class="room-name">${room.name}</div>
-        <div class="room-meta">${room.members} أعضاء · يُجدد ${room.renewDate}</div>
+        <div class="room-meta">${room.members} Ø£Ø¹Ø¶Ø§Ø¡ Â· ÙŠÙØ¬Ø¯Ø¯ ${room.renewDate}</div>
         <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
           ${room.isPaid
-            ? '<span class="badge badge-success"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> مدفوع</span>'
-            : '<span class="badge badge-danger">⚠ غير مدفوع</span>'
+            ? '<span class="badge badge-success"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Ù…Ø¯ÙÙˆØ¹</span>'
+            : '<span class="badge badge-danger">âš  ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹</span>'
           }
-          <span class="badge badge-primary">${room.price} ${room.currency}/شهر</span>
+          <span class="badge badge-primary">${room.price} ${room.currency}/Ø´Ù‡Ø±</span>
           ${room.isAdmin ? '<span class="badge badge-warning">Admin</span>' : ''}
         </div>
       </div>
@@ -720,9 +734,9 @@ function openRoom(roomId) {
     // Locked screen
     document.getElementById('unpaid-room-name').textContent = room.name;
     document.getElementById('locked-reason').textContent    =
-      'لم يتم سداد اشتراك ' + room.name + ' للشهر الجاري. ادفع للوصول لجميع بيانات الروم.';
+      'Ù„Ù… ÙŠØªÙ… Ø³Ø¯Ø§Ø¯ Ø§Ø´ØªØ±Ø§Ùƒ ' + room.name + ' Ù„Ù„Ø´Ù‡Ø± Ø§Ù„Ø¬Ø§Ø±ÙŠ. Ø§Ø¯ÙØ¹ Ù„Ù„ÙˆØµÙˆÙ„ Ù„Ø¬Ù…ÙŠØ¹ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±ÙˆÙ….';
     document.getElementById('locked-amount').innerHTML =
-      room.price + ' <span>' + room.currency + '/شهر</span>';
+      room.price + ' <span>' + room.currency + '/Ø´Ù‡Ø±</span>';
     navigateTo('screen-unpaid');
     return;
   }
@@ -731,7 +745,7 @@ function openRoom(roomId) {
   document.getElementById('room-detail-icon').textContent = room.icon;
   document.getElementById('room-detail-name').textContent = room.name;
   document.getElementById('room-detail-meta').textContent =
-    room.members + ' أعضاء · ' + (room.isPaid ? 'مدفوع ✓' : 'غير مدفوع');
+    room.members + ' Ø£Ø¹Ø¶Ø§Ø¡ Â· ' + (room.isPaid ? 'Ù…Ø¯ÙÙˆØ¹ âœ“' : 'ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹');
 
   // Info card
   renderRoomInfoCard(room);
@@ -764,33 +778,33 @@ function renderRoomInfoCard(room) {
   if (!card) return;
   card.innerHTML = `
     <div class="info-row">
-      <span class="info-key">كود الدعوة</span>
+      <span class="info-key">ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©</span>
       <span class="info-val" style="gap:8px">
         <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
-        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="نسخ كود الدعوة">نسخ</button>
+        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Ù†Ø³Ø® ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©">Ù†Ø³Ø®</button>
       </span>
     </div>
     <div class="info-row">
-      <span class="info-key">الخدمة</span>
+      <span class="info-key">Ø§Ù„Ø®Ø¯Ù…Ø©</span>
       <span class="info-val">${room.service}</span>
     </div>
     <div class="info-row">
-      <span class="info-key">السعر الشهري</span>
+      <span class="info-key">Ø§Ù„Ø³Ø¹Ø± Ø§Ù„Ø´Ù‡Ø±ÙŠ</span>
       <span class="info-val">${room.price} ${room.currency}</span>
     </div>
     <div class="info-row">
-      <span class="info-key">تاريخ التجديد</span>
+      <span class="info-key">ØªØ§Ø±ÙŠØ® Ø§Ù„ØªØ¬Ø¯ÙŠØ¯</span>
       <span class="info-val">${room.renewDate}</span>
     </div>
     <div class="info-row">
-      <span class="info-key">اسم المستخدم</span>
+      <span class="info-key">Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…</span>
       <span class="info-val mono" style="direction:ltr;text-align:left">${room.username}</span>
     </div>
     <div class="info-row" style="border-bottom:none">
-      <span class="info-key">كلمة المرور</span>
+      <span class="info-key">ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±</span>
       <span class="info-val" style="gap:8px">
         <span class="mono blurred" id="room-pass-val" style="direction:ltr;letter-spacing:2px">${room.password}</span>
-        <button class="toggle-vis" id="room-pass-toggle" onclick="toggleRoomPassword()" title="إظهار / إخفاء">
+        <button class="toggle-vis" id="room-pass-toggle" onclick="toggleRoomPassword()" title="Ø¥Ø¸Ù‡Ø§Ø± / Ø¥Ø®ÙØ§Ø¡">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
@@ -814,12 +828,13 @@ function toggleRoomPassword() {
 async function copyRoomInviteCode() {
   const code = state.currentRoom?.code;
   if (!code) {
-    showToast('لا يوجد كود دعوة للروم', 'error');
+    showToast('Ù„Ø§ ÙŠÙˆØ¬Ø¯ ÙƒÙˆØ¯ Ø¯Ø¹ÙˆØ© Ù„Ù„Ø±ÙˆÙ…', 'error');
     return;
   }
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(code);
+      showToast(`ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…: ${code}`, 'info', 9000);
     } else {
       const input = document.createElement('textarea');
       input.value = code;
@@ -830,9 +845,9 @@ async function copyRoomInviteCode() {
       document.execCommand('copy');
       input.remove();
     }
-    showToast('تم نسخ كود الدعوة', 'success');
+    showToast('ØªÙ… Ù†Ø³Ø® ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©', 'success');
   } catch (error) {
-    showToast('انسخ الكود يدوياً: ' + code, 'info', 6000);
+    showToast('Ø§Ù†Ø³Ø® Ø§Ù„ÙƒÙˆØ¯ ÙŠØ¯ÙˆÙŠØ§Ù‹: ' + code, 'info', 6000);
   }
 }
 
@@ -848,7 +863,7 @@ function startOTPTimer() {
     const timeEl = document.getElementById('otp-time-left');
     const barEl  = document.getElementById('otp-bar');
     if (codeEl) codeEl.textContent = state.currentRoom.latestOtp || '--';
-    if (timeEl) timeEl.textContent = state.currentRoom.latestOtp ? 'آخر كود محفوظ' : 'بانتظار OTP';
+    if (timeEl) timeEl.textContent = state.currentRoom.latestOtp ? 'Ø¢Ø®Ø± ÙƒÙˆØ¯ Ù…Ø­ÙÙˆØ¸' : 'Ø¨Ø§Ù†ØªØ¸Ø§Ø± OTP';
     if (barEl) {
       barEl.style.width = state.currentRoom.latestOtp ? '100%' : '12%';
       barEl.style.background = state.currentRoom.latestOtp ? 'var(--success)' : 'var(--warning)';
@@ -892,7 +907,7 @@ function renderRoomNotifications(room) {
   const list = document.getElementById('room-notifs-list');
   if (!list) return;
   if (!room.notifications || room.notifications.length === 0) {
-    list.innerHTML = emptyState('لا توجد إشعارات لهذه الروم', 'bell');
+    list.innerHTML = emptyState('Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ù„Ù‡Ø°Ù‡ Ø§Ù„Ø±ÙˆÙ…', 'bell');
     return;
   }
   list.innerHTML = room.notifications.map(n => notifItemHTML(n)).join('');
@@ -906,7 +921,26 @@ function renderRoomMembers(room) {
   const actDiv    = document.getElementById('room-members-actions');
   if (!list) return;
 
-  if (actDiv) actDiv.style.display = room.isAdmin ? 'block' : 'none';
+  if (actDiv) {
+    actDiv.style.display = room.isAdmin ? 'block' : 'none';
+    if (room.isAdmin) {
+      actDiv.innerHTML = `
+        <div class="info-card" style="margin-bottom:12px">
+          <div class="info-row" style="border-bottom:none">
+            <span class="info-key">ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…</span>
+            <span class="info-val" style="gap:8px">
+              <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
+              <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Ù†Ø³Ø® ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…">Ù†Ø³Ø®</button>
+            </span>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="display:flex;align-items:center;gap:8px" onclick="openModal('modal-add-member')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Ø¥Ø¶Ø§ÙØ© Ø¹Ø¶Ùˆ
+        </button>
+      `;
+    }
+  }
 
   list.innerHTML = room.membersList.map(m => `
     <div class="member-item fade-in">
@@ -917,13 +951,13 @@ function renderRoomMembers(room) {
         <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
           ${roleBadge(m.role)}
           ${m.paid
-            ? '<span class="badge badge-success">مدفوع</span>'
-            : '<span class="badge badge-danger">غير مدفوع</span>'}
+            ? '<span class="badge badge-success">Ù…Ø¯ÙÙˆØ¹</span>'
+            : '<span class="badge badge-danger">ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹</span>'}
         </div>
       </div>
       ${(room.isAdmin && m.role !== 'owner') ? `
         <div class="member-actions">
-          <button class="btn btn-xs btn-danger" onclick="confirmRemoveMember('${m.id}','${m.name}')">إزالة</button>
+          <button class="btn btn-xs btn-danger" onclick="confirmRemoveMember('${m.id}','${m.name}')">Ø¥Ø²Ø§Ù„Ø©</button>
         </div>` : ''}
     </div>
   `).join('');
@@ -969,7 +1003,7 @@ function goToPayment() {
   if (!state.currentRoom) return;
   // Set period label (current month/year)
   const now = new Date();
-  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const months = ['ÙŠÙ†Ø§ÙŠØ±','ÙØ¨Ø±Ø§ÙŠØ±','Ù…Ø§Ø±Ø³','Ø£Ø¨Ø±ÙŠÙ„','Ù…Ø§ÙŠÙˆ','ÙŠÙˆÙ†ÙŠÙˆ','ÙŠÙˆÙ„ÙŠÙˆ','Ø£ØºØ³Ø·Ø³','Ø³Ø¨ØªÙ…Ø¨Ø±','Ø£ÙƒØªÙˆØ¨Ø±','Ù†ÙˆÙÙ…Ø¨Ø±','Ø¯ÙŠØ³Ù…Ø¨Ø±'];
   const period = months[now.getMonth()] + ' ' + now.getFullYear();
 
   document.getElementById('payment-room-name').textContent = state.currentRoom.name;
@@ -1014,19 +1048,19 @@ function handlePayment() {
         id:     'h_' + Date.now(),
         room:   state.currentRoom.name,
         amount: state.currentRoom.price,
-        date:   'الآن',
+        date:   'Ø§Ù„Ø¢Ù†',
         method: paymentMethodLabel(state.selectedPaymentMethod),
         status: 'success',
       });
       loadHomeScreen();
-      showToast('تم الدفع بنجاح ✅', 'success');
+      showToast('ØªÙ… Ø§Ù„Ø¯ÙØ¹ Ø¨Ù†Ø¬Ø§Ø­ âœ…', 'success');
       setTimeout(() => openRoom(state.currentRoom.id), 700);
     }
   }, 1500);
 }
 
 function paymentMethodLabel(m) {
-  return { instapay:'InstaPay', wallet:'المحفظة', card:'بطاقة بنكية' }[m] || m;
+  return { instapay:'InstaPay', wallet:'Ø§Ù„Ù…Ø­ÙØ¸Ø©', card:'Ø¨Ø·Ø§Ù‚Ø© Ø¨Ù†ÙƒÙŠØ©' }[m] || m;
 }
 
 // ===================================================
@@ -1036,7 +1070,7 @@ function renderNotificationsList() {
   const list = document.getElementById('notifs-list');
   if (!list) return;
   if (state.notifications.length === 0) {
-    list.innerHTML = emptyState('لا توجد إشعارات', 'bell');
+    list.innerHTML = emptyState('Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª', 'bell');
     return;
   }
   list.innerHTML = state.notifications.map(n => notifItemHTML(n, true)).join('');
@@ -1083,7 +1117,7 @@ function markAllRead() {
   renderNotificationsList();
   const badge = document.getElementById('notif-badge');
   if (badge) badge.style.display = 'none';
-  showToast('تم تحديد الكل كمقروء ✅', 'success');
+  showToast('ØªÙ… ØªØ­Ø¯ÙŠØ¯ Ø§Ù„ÙƒÙ„ ÙƒÙ…Ù‚Ø±ÙˆØ¡ âœ…', 'success');
 }
 
 // ===================================================
@@ -1093,7 +1127,7 @@ function renderHistoryList() {
   const list = document.getElementById('history-list');
   if (!list) return;
   if (DEMO_HISTORY.length === 0) {
-    list.innerHTML = emptyState('لا توجد معاملات بعد', 'card');
+    list.innerHTML = emptyState('Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ø¹Ø§Ù…Ù„Ø§Øª Ø¨Ø¹Ø¯', 'card');
     return;
   }
   list.innerHTML = DEMO_HISTORY.map(h => `
@@ -1108,11 +1142,11 @@ function renderHistoryList() {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.room}</div>
-        <div style="font-size:12px;color:var(--text-muted)">${h.method} · ${h.date}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${h.method} Â· ${h.date}</div>
       </div>
       <div style="font-size:16px;font-weight:800;flex-shrink:0;
         ${h.status === 'success' ? 'color:var(--success)' : 'color:var(--danger)'}">
-        ${h.amount} ج
+        ${h.amount} Ø¬
       </div>
     </div>
   `).join('');
@@ -1155,12 +1189,12 @@ async function handleJoinRoom() {
 
   if (!code) {
     if (errorEl) errorEl.style.display = 'flex';
-    if (errTxt)  errTxt.textContent    = 'يرجى إدخال كود الدعوة';
+    if (errTxt)  errTxt.textContent    = 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©';
     return;
   }
   if (code.length < 4) {
     if (errorEl) errorEl.style.display = 'flex';
-    if (errTxt)  errTxt.textContent    = 'الكود قصير جداً';
+    if (errTxt)  errTxt.textContent    = 'Ø§Ù„ÙƒÙˆØ¯ Ù‚ØµÙŠØ± Ø¬Ø¯Ø§Ù‹';
     return;
   }
 
@@ -1176,10 +1210,10 @@ async function handleJoinRoom() {
     renderRoomsList();
     closeModal('modal-join');
     if (input) input.value = '';
-    showToast('تم الانضمام للروم بنجاح 🎉', 'success');
+    showToast('ØªÙ… Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ù„Ù„Ø±ÙˆÙ… Ø¨Ù†Ø¬Ø§Ø­ ðŸŽ‰', 'success');
   } catch (error) {
     if (errorEl) errorEl.style.display = 'flex';
-    if (errTxt) errTxt.textContent = 'كود الدعوة غير صحيح أو يجب تسجيل الدخول أولاً';
+    if (errTxt) errTxt.textContent = 'ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ© ØºÙŠØ± ØµØ­ÙŠØ­ Ø£Ùˆ ÙŠØ¬Ø¨ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹';
   } finally {
     setButtonLoading(btn, false);
   }
@@ -1187,7 +1221,7 @@ async function handleJoinRoom() {
 
 async function handleCreateRoom() {
   if (state.currentUser?.role !== 'admin') {
-    showToast('حساب أدمن مطلوب لإنشاء الرومات', 'error');
+    showToast('Ø­Ø³Ø§Ø¨ Ø£Ø¯Ù…Ù† Ù…Ø·Ù„ÙˆØ¨ Ù„Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…Ø§Øª', 'error');
     return;
   }
 
@@ -1199,11 +1233,11 @@ async function handleCreateRoom() {
   const imapAppPassword = document.getElementById('create-room-imap-password')?.value.trim();
 
   if (!name || !subscriptionEmail || !password || !imapEmail || !imapAppPassword) {
-    showToast('املأ بيانات الروم والميل بالكامل', 'error');
+    showToast('Ø§Ù…Ù„Ø£ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±ÙˆÙ… ÙˆØ§Ù„Ù…ÙŠÙ„ Ø¨Ø§Ù„ÙƒØ§Ù…Ù„', 'error');
     return;
   }
   if (!isValidEmail(subscriptionEmail) || !isValidEmail(imapEmail)) {
-    showToast('تأكد من صحة الإيميلات', 'error');
+    showToast('ØªØ£ÙƒØ¯ Ù…Ù† ØµØ­Ø© Ø§Ù„Ø¥ÙŠÙ…ÙŠÙ„Ø§Øª', 'error');
     return;
   }
 
@@ -1231,9 +1265,9 @@ async function handleCreateRoom() {
         const input = document.getElementById(id);
         if (input) input.value = '';
       });
-    showToast(`تم إنشاء الروم. كود الدعوة: ${room.code}`, 'success', 6000);
+    showToast(`ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…. ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©: ${room.code}`, 'success', 6000);
   } catch (error) {
-    showToast(error.message || 'فشل إنشاء الروم', 'error');
+    showToast(error.message || 'ÙØ´Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…', 'error');
   } finally {
     setButtonLoading(btn, false);
   }
@@ -1337,7 +1371,7 @@ async function handleAddMember() {
   const emailInput = document.getElementById('add-member-email');
   const email = emailInput ? emailInput.value.trim() : '';
   if (!email || !isValidEmail(email)) {
-    showToast('بريد إلكتروني غير صحيح', 'error');
+    showToast('Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ­ÙŠØ­', 'error');
     return;
   }
   if (!state.currentRoom?.id) return;
@@ -1357,12 +1391,13 @@ async function handleAddMember() {
     closeModal('modal-add-member');
     if (emailInput) emailInput.value = '';
     if (result.inviteRequired) {
-      showToast(`العضو لم ينشئ حساباً بعد. ابعت له كود الروم: ${result.code}`, 'info', 8000);
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(result.code).catch(() => {});
+      showToast(`Ø§Ù„Ø¹Ø¶Ùˆ Ù„Ù… ÙŠÙ†Ø´Ø¦ Ø­Ø³Ø§Ø¨Ø§Ù‹ Ø¨Ø¹Ø¯. Ø§Ø¨Ø¹Øª Ù„Ù‡ ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…: ${result.code}`, 'info', 8000);
     } else {
-      showToast('تمت إضافة العضو للروم', 'success');
+      showToast('ØªÙ…Øª Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ø¹Ø¶Ùˆ Ù„Ù„Ø±ÙˆÙ…', 'success');
     }
   } catch (error) {
-    showToast(error.message || 'فشل إضافة العضو', 'error');
+    showToast(error.message || 'ÙØ´Ù„ Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ø¹Ø¶Ùˆ', 'error');
   } finally {
     setButtonLoading(btn, false);
   }
@@ -1375,7 +1410,7 @@ async function handleAdminMessage() {
   const subject = subjectInput ? subjectInput.value.trim() : '';
   const body = bodyInput ? bodyInput.value.trim() : '';
   if (!subject || !body) {
-    showToast('اكتب عنوان ونص الرسالة', 'error');
+    showToast('Ø§ÙƒØªØ¨ Ø¹Ù†ÙˆØ§Ù† ÙˆÙ†Øµ Ø§Ù„Ø±Ø³Ø§Ù„Ø©', 'error');
     return;
   }
 
@@ -1402,9 +1437,9 @@ async function handleAdminMessage() {
     closeModal('modal-admin-message');
     if (subjectInput) subjectInput.value = '';
     if (bodyInput) bodyInput.value = '';
-    showToast('تم إرسال الرسالة للمشتركين', 'success');
+    showToast('ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø© Ù„Ù„Ù…Ø´ØªØ±ÙƒÙŠÙ†', 'success');
   } catch (error) {
-    showToast(error.message || 'فشل إرسال الرسالة', 'error');
+    showToast(error.message || 'ÙØ´Ù„ Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©', 'error');
   } finally {
     setButtonLoading(btn, false);
   }
@@ -1440,7 +1475,7 @@ function setupEventListeners() {
       const emailInput = document.getElementById('add-member-email');
       const email = emailInput ? emailInput.value.trim() : '';
       if (!email || !isValidEmail(email)) {
-        showToast('بريد إلكتروني غير صحيح', 'error'); return;
+        showToast('Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ­ÙŠØ­', 'error'); return;
       }
       if (state.currentRoom) {
         const newM = {
@@ -1457,7 +1492,7 @@ function setupEventListeners() {
       }
       closeModal('modal-add-member');
       if (emailInput) emailInput.value = '';
-      showToast('تم إرسال الدعوة ✅', 'success');
+      showToast('ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¯Ø¹ÙˆØ© âœ…', 'success');
     });
   }
 
@@ -1472,7 +1507,7 @@ function setupEventListeners() {
         state.memberToRemove = null;
       }
       closeModal('modal-remove-member');
-      showToast('تم إزالة العضو', 'success');
+      showToast('ØªÙ… Ø¥Ø²Ø§Ù„Ø© Ø§Ù„Ø¹Ø¶Ùˆ', 'success');
     });
   }
 
@@ -1481,12 +1516,12 @@ function setupEventListeners() {
   if (deleteBtn) {
     deleteBtn.addEventListener('click', () => {
       const val = (document.getElementById('delete-confirm-input') || {}).value || '';
-      if (val.trim() !== 'احذف حسابي') {
-        showToast('اكتب "احذف حسابي" بالضبط للتأكيد', 'error'); return;
+      if (val.trim() !== 'Ø§Ø­Ø°Ù Ø­Ø³Ø§Ø¨ÙŠ') {
+        showToast('Ø§ÙƒØªØ¨ "Ø§Ø­Ø°Ù Ø­Ø³Ø§Ø¨ÙŠ" Ø¨Ø§Ù„Ø¶Ø¨Ø· Ù„Ù„ØªØ£ÙƒÙŠØ¯', 'error'); return;
       }
       if (state.otpInterval) clearInterval(state.otpInterval);
       closeModal('modal-delete-account');
-      showToast('تم حذف الحساب نهائياً', 'info');
+      showToast('ØªÙ… Ø­Ø°Ù Ø§Ù„Ø­Ø³Ø§Ø¨ Ù†Ù‡Ø§Ø¦ÙŠØ§Ù‹', 'info');
       setTimeout(() => navigateTo('screen-login'), 800);
     });
   }
@@ -1501,7 +1536,7 @@ function init() {
   setupEventListeners();
   navigateTo('screen-splash');
 
-  // Auto-advance splash → login
+  // Auto-advance splash â†’ login
   setTimeout(() => navigateTo('screen-login'), 2400);
 }
 
@@ -1519,3 +1554,4 @@ function registerServiceWorker() {
     });
   });
 }
+
