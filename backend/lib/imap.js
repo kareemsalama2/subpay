@@ -23,7 +23,7 @@ async function parseRawEmail(room, uid, raw) {
     from: parsed.from?.text || room.inboundEmail,
     sourceEmail: accountEmail(room),
     otp,
-    otpExpiresAt: otp ? otpExpiresAt(createdAt) : null,
+    otpExpiresAt: otp ? otpExpiresAt(createdAt, room.otpTtlMinutes) : null,
     createdAt
   };
 }

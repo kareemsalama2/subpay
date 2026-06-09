@@ -28,6 +28,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && path === "/api/rooms") return listRooms(req, res);
     if (req.method === "POST" && path === "/api/rooms") return await createRoom(req, res);
     if (req.method === "POST" && path === "/api/rooms/join") return await joinRoom(req, res);
+    if (req.method === "PATCH" && path.match(/^\/api\/rooms\/[^/]+\/settings$/)) return await updateRoomSettings(req, res, path);
     if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/members$/)) return await addRoomMember(req, res, path);
     if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/messages$/)) return await addRoomMessage(req, res, path);
     if (req.method === "GET" && path.match(/^\/api\/rooms\/[^/]+\/messages$/)) return roomMessages(req, res, path);
@@ -202,6 +203,7 @@ async function createRoom(req, res) {
       inboundEmail: body.inboundEmail || `${code.toLowerCase()}@subpay.app`,
       subscriptionEmail: body.subscriptionEmail || "",
       monthlyPrice: Number(body.monthlyPrice || 0),
+      otpTtlMinutes: clampOtpTtl(body.otpTtlMinutes),
       password: body.password || "",
       createdAt: Date.now()
     };
@@ -243,6 +245,25 @@ async function joinRoom(req, res) {
   });
   if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
   if (!result) return badRequest(res, "invalid room code");
+  sendJson(res, 200, { room: result });
+}
+
+async function updateRoomSettings(req, res, path) {
+  const roomId = path.split("/")[3];
+  const body = await readBody(req);
+  const result = mutate((db) => {
+    const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
+    const room = db.rooms.find((item) => item.id === roomId);
+    if (!room) return null;
+    const membership = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+    if (!membership || !["owner", "admin"].includes(membership.role) && user.role !== "admin") return { forbidden: true };
+    room.otpTtlMinutes = clampOtpTtl(body.otpTtlMinutes);
+    return enrichRoom(db, room, user.id);
+  });
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
+  if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
+  if (!result) return notFound(res);
   sendJson(res, 200, { room: result });
 }
 
@@ -306,7 +327,7 @@ async function addRoomMessage(req, res, path) {
       from: body.from || user.name || room.inboundEmail,
       sourceEmail: room.inboundEmail,
       otp,
-      otpExpiresAt: otp ? otpExpiresAt(createdAt) : null,
+      otpExpiresAt: otp ? otpExpiresAt(createdAt, room.otpTtlMinutes) : null,
       createdAt
     };
     db.messages.unshift(message);
@@ -457,6 +478,12 @@ function uniqueRoomCode(db, name) {
   let code = roomCode(name);
   while (db.rooms.some((room) => room.code === code)) code = roomCode(name);
   return code;
+}
+
+function clampOtpTtl(value) {
+  const minutes = Number(value || 5);
+  if (!Number.isFinite(minutes)) return 5;
+  return Math.min(60, Math.max(1, Math.round(minutes)));
 }
 
 function roomEvents(req, res, path) {

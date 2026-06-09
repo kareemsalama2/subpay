@@ -186,6 +186,7 @@ function normalizeBackendRoom(room) {
     isAdmin: ['owner', 'admin'].includes(room.role),
     username: room.subscriptionEmail || room.inboundEmail || '',
     password: room.password || '',
+    otpTtlMinutes: room.otpTtlMinutes || 5,
     renewDate: room.paidUntil || 'ØºÙŠØ± Ù…Ø­Ø¯Ø¯',
     latestOtp: latestOtpMessage?.otp || null,
     latestOtpMessageId: latestOtpMessage?.id || null,
@@ -350,7 +351,8 @@ function applyOtpMessageDedup(message) {
   if (codeEl) codeEl.textContent = message.otp;
   if (timeEl) timeEl.textContent = formatOtpStatus(message);
   if (barEl) {
-    const percent = message.otpExpiresAt ? Math.max(0, Math.min(100, (remaining / (5 * 60 * 1000)) * 100)) : 100;
+    const ttlMs = Math.max(1, Number(state.currentRoom?.otpTtlMinutes || 5)) * 60 * 1000;
+    const percent = message.otpExpiresAt ? Math.max(0, Math.min(100, (remaining / ttlMs) * 100)) : 100;
     barEl.style.width = `${percent}%`;
     barEl.style.background = remaining || !message.otpExpiresAt ? 'var(--success)' : 'var(--danger)';
   }
@@ -777,11 +779,27 @@ function renderRoomInfoCard(room) {
   const card = document.getElementById('room-info-card');
   if (!card) return;
   card.innerHTML = `
+    ${room.isAdmin ? `
+      <div class="info-row">
+        <span class="info-key">رسالة للمشتركين</span>
+        <span class="info-val">
+          <button class="toggle-vis" onclick="openModal('modal-admin-message')" title="إرسال رسالة">اكتب رسالة</button>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">مدة صلاحية OTP</span>
+        <span class="info-val" style="gap:8px">
+          <input id="room-otp-ttl-input" class="form-input ltr" type="number" min="1" max="60" value="${room.otpTtlMinutes || 5}" style="width:82px;padding:8px 10px">
+          <span>دقيقة</span>
+          <button class="toggle-vis" onclick="saveRoomOtpTtl()" title="حفظ مدة OTP">حفظ</button>
+        </span>
+      </div>
+    ` : ''}
     <div class="info-row">
-      <span class="info-key">ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©</span>
+      <span class="info-key">كود الدعوة</span>
       <span class="info-val" style="gap:8px">
         <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
-        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Ù†Ø³Ø® ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©">Ù†Ø³Ø®</button>
+        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="نسخ كود الدعوة">نسخ</button>
       </span>
     </div>
     <div class="info-row">
@@ -823,6 +841,29 @@ function toggleRoomPassword() {
   passVisible = !passVisible;
   const val = document.getElementById('room-pass-val');
   if (val) val.classList.toggle('blurred', !passVisible);
+}
+
+async function saveRoomOtpTtl() {
+  if (!state.currentRoom?.id) return;
+  const input = document.getElementById('room-otp-ttl-input');
+  const otpTtlMinutes = Number(input?.value || 5);
+  if (!Number.isFinite(otpTtlMinutes) || otpTtlMinutes < 1 || otpTtlMinutes > 60) {
+    showToast('مدة OTP لازم تكون من 1 إلى 60 دقيقة', 'error');
+    return;
+  }
+  try {
+    const result = await apiFetch(`/rooms/${state.currentRoom.id}/settings`, {
+      method: 'PATCH',
+      body: JSON.stringify({ otpTtlMinutes }),
+    });
+    const room = normalizeBackendRoom(result.room);
+    state.currentRoom = room;
+    state.rooms = [room, ...state.rooms.filter((item) => item.id !== room.id)];
+    renderRoomInfoCard(room);
+    showToast('تم حفظ مدة صلاحية OTP', 'success');
+  } catch (error) {
+    showToast(error.message || 'فشل حفظ مدة OTP', 'error');
+  }
 }
 
 async function copyRoomInviteCode() {
@@ -1229,6 +1270,7 @@ async function handleCreateRoom() {
   const subscriptionEmail = document.getElementById('create-room-sub-email')?.value.trim();
   const password = document.getElementById('create-room-sub-password')?.value.trim();
   const monthlyPrice = document.getElementById('create-room-price')?.value.trim();
+  const otpTtlMinutes = document.getElementById('create-room-otp-ttl')?.value.trim();
   const imapEmail = document.getElementById('create-room-imap-email')?.value.trim();
   const imapAppPassword = document.getElementById('create-room-imap-password')?.value.trim();
 
@@ -1251,6 +1293,7 @@ async function handleCreateRoom() {
         subscriptionEmail,
         password,
         monthlyPrice: Number(monthlyPrice || 0),
+        otpTtlMinutes: Number(otpTtlMinutes || 5),
         inboundEmail: imapEmail,
         imapEmail,
         imapAppPassword,
@@ -1260,11 +1303,13 @@ async function handleCreateRoom() {
     state.rooms.unshift(room);
     renderRoomsList();
     closeModal('modal-create-room');
-    ['create-room-name', 'create-room-sub-email', 'create-room-sub-password', 'create-room-price', 'create-room-imap-email', 'create-room-imap-password']
+    ['create-room-name', 'create-room-sub-email', 'create-room-sub-password', 'create-room-price', 'create-room-otp-ttl', 'create-room-imap-email', 'create-room-imap-password']
       .forEach((id) => {
         const input = document.getElementById(id);
         if (input) input.value = '';
       });
+    const ttlInput = document.getElementById('create-room-otp-ttl');
+    if (ttlInput) ttlInput.value = '5';
     showToast(`ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…. ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©: ${room.code}`, 'success', 6000);
   } catch (error) {
     showToast(error.message || 'ÙØ´Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…', 'error');
@@ -1350,6 +1395,58 @@ function setButtonLoading(btn, loading) {
 function togglePasswordVisibility(inputId) {
   const input = document.getElementById(inputId);
   if (input) input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function fixAdminArabicText() {
+  const createTitle = document.querySelector('#modal-create-room .modal-title');
+  if (createTitle) createTitle.textContent = 'إنشاء روم جديد';
+
+  const labels = [
+    ['create-room-name', 'اسم الروم'],
+    ['create-room-sub-email', 'إيميل الاشتراك'],
+    ['create-room-sub-password', 'باسورد الاشتراك'],
+    ['create-room-price', 'السعر الشهري'],
+    ['create-room-imap-email', 'Gmail الذي يستقبل OTP'],
+    ['create-room-imap-password', 'Gmail App Password'],
+  ];
+  labels.forEach(([id, text]) => {
+    const input = document.getElementById(id);
+    const label = input?.closest('.form-group')?.querySelector('.form-label');
+    if (label) label.textContent = text;
+  });
+
+  if (!document.getElementById('create-room-otp-ttl')) {
+    const priceGroup = document.getElementById('create-room-price')?.closest('.form-group');
+    priceGroup?.insertAdjacentHTML('afterend', `
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">مدة صلاحية OTP بالدقائق</label>
+        <input type="number" class="form-input ltr" id="create-room-otp-ttl" placeholder="5" min="1" max="60" value="5">
+      </div>
+    `);
+  }
+
+  const createBtn = document.getElementById('btn-create-room-confirm');
+  if (createBtn) createBtn.textContent = 'إنشاء وربط OTP';
+  const createCancel = document.querySelector('#modal-create-room .btn-outline');
+  if (createCancel) createCancel.textContent = 'إلغاء';
+  const adminMessageTitle = document.querySelector('#modal-admin-message .modal-title');
+  if (adminMessageTitle) adminMessageTitle.textContent = 'رسالة للمشتركين';
+  const subject = document.getElementById('admin-message-subject');
+  if (subject) {
+    subject.placeholder = 'تحديث بيانات الاشتراك';
+    const label = subject.closest('.form-group')?.querySelector('.form-label');
+    if (label) label.textContent = 'عنوان الرسالة';
+  }
+  const body = document.getElementById('admin-message-body');
+  if (body) {
+    body.placeholder = 'اكتب الرسالة التي ستظهر لكل أعضاء الروم';
+    const label = body.closest('.form-group')?.querySelector('.form-label');
+    if (label) label.textContent = 'نص الرسالة';
+  }
+  const sendBtn = document.getElementById('btn-admin-message-confirm');
+  if (sendBtn) sendBtn.textContent = 'إرسال الرسالة';
+  const messageCancel = document.querySelector('#modal-admin-message .btn-outline');
+  if (messageCancel) messageCancel.textContent = 'إلغاء';
 }
 
 function emptyState(title, icon) {
@@ -1532,6 +1629,7 @@ function setupEventListeners() {
 // ===================================================
 function init() {
   registerServiceWorker();
+  fixAdminArabicText();
   renderFAQ(); // pre-render so FAQ screen is instant
   setupEventListeners();
   navigateTo('screen-splash');
