@@ -17,7 +17,7 @@ function pythonExe() {
     "python.exe"
   );
   if (fs.existsSync(bundled)) return bundled;
-  return "python";
+  return process.platform === "win32" ? "python" : "python3";
 }
 
 function parseRawEmail(room, uid, rawMessage) {
@@ -55,11 +55,18 @@ async function pollRoomImap(db, room, account) {
     lastUid: Number(account.lastUid || 0),
     limit: Number(account.limit || 20)
   });
-  const result = spawnSync(pythonExe(), [script], {
+  let result = spawnSync(pythonExe(), [script], {
     input,
     encoding: "utf8",
     timeout: 120000
   });
+  if (result.error && result.error.code === "ENOENT" && !process.env.PYTHON_EXE) {
+    result = spawnSync("python", [script], {
+      input,
+      encoding: "utf8",
+      timeout: 120000
+    });
+  }
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(result.stderr || "IMAP poll failed");
   const payload = JSON.parse(result.stdout || "{}");

@@ -252,9 +252,27 @@ async function loginWithBackend(email, password, name) {
     const roomsData = await apiFetch('/rooms');
     return { user, rooms: (roomsData.rooms || []).map(normalizeBackendRoom) };
   } catch (error) {
-    console.warn('Backend login failed, using demo data:', error.message);
-    return null;
+    console.warn('Backend login failed:', error.message);
+    throw error;
   }
+}
+
+async function registerWithBackend({ name, phone, email, password }) {
+  const result = await apiFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, phone, email, password }),
+  });
+  state.authToken = result.token;
+  localStorage.setItem('subpay_token', result.token);
+  const user = {
+    id: result.user.id,
+    name: result.user.name || name,
+    email: result.user.email,
+    phone: result.user.phone || phone,
+    avatar: result.user.avatar || name.charAt(0),
+    role: result.user.role || 'member',
+  };
+  return { user, rooms: [] };
 }
 
 function closeOtpRealtime() {
@@ -314,7 +332,11 @@ async function pollRoomOtpNow(room) {
   try {
     const data = await apiFetch(`/rooms/${room.id}/imap/poll`, { method: 'POST' });
     const latest = (data.created || []).find((message) => message.otp);
-    if (latest) applyOtpMessage(latest);
+    if (latest) {
+      applyOtpMessage(latest);
+      return;
+    }
+    await loadLatestBackendOtp(room);
   } catch (error) {
     console.warn('Room OTP poll failed:', error.message);
   }
@@ -401,24 +423,19 @@ async function handleLogin() {
   const btn = document.getElementById('btn-login');
   setButtonLoading(btn, true);
 
+  try {
     const backendSession = await loginWithBackend(email, pass, DEMO_USER.name);
-  setTimeout(() => {
     setButtonLoading(btn, false);
-    if (backendSession) {
-      loginSuccess(backendSession.user, backendSession.rooms.length ? backendSession.rooms : DEMO_ROOMS, DEMO_NOTIFICATIONS);
-    } else {
-      loginSuccess(DEMO_USER, DEMO_ROOMS, DEMO_NOTIFICATIONS);
-    }
+    loginSuccess(backendSession.user, backendSession.rooms, []);
     showToast('أهلاً بك في SubPay ✅', 'success');
-  }, 300);
+  } catch (error) {
+    setButtonLoading(btn, false);
+    showToast('بيانات الدخول غير صحيحة أو السيرفر غير متاح', 'error');
+  }
 }
 
 function handleGoogleLogin() {
-  showToast('جاري الاتصال بـ Google...', 'info');
-  setTimeout(() => {
-    loginSuccess(DEMO_USER, DEMO_ROOMS, DEMO_NOTIFICATIONS);
-    showToast('تم تسجيل الدخول بـ Google ✅', 'success');
-  }, 1500);
+  showToast('تسجيل الدخول بجوجل غير مفعل حالياً. استخدم البريد وكلمة المرور.', 'warning', 5000);
 }
 
 function loginSuccess(user, rooms, notifs) {
@@ -434,7 +451,7 @@ function loginSuccess(user, rooms, notifs) {
 // ===================================================
 // Auth — Register
 // ===================================================
-function handleRegister() {
+async function handleRegister() {
   const name  = document.getElementById('reg-name').value.trim();
   const phone = document.getElementById('reg-phone').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -453,12 +470,15 @@ function handleRegister() {
   const btn = document.getElementById('btn-register');
   setButtonLoading(btn, true);
 
-  setTimeout(() => {
+  try {
+    const session = await registerWithBackend({ name, phone, email, password: pass });
     setButtonLoading(btn, false);
-    const newUser = { id:'u_new', name, email, phone, avatar: name.charAt(0) };
-    loginSuccess(newUser, [], [DEMO_NOTIFICATIONS[0]]);
+    loginSuccess(session.user, session.rooms, []);
     showToast('تم إنشاء حسابك بنجاح 🎉', 'success');
-  }, 1200);
+  } catch (error) {
+    setButtonLoading(btn, false);
+    showToast(error.message || 'فشل إنشاء الحساب', 'error');
+  }
 }
 
 // ===================================================
@@ -1013,7 +1033,7 @@ function toggleFAQ(idx) {
 // ===================================================
 // Join Room
 // ===================================================
-function handleJoinRoom() {
+async function handleJoinRoom() {
   const input   = document.getElementById('join-code-input');
   const errorEl = document.getElementById('join-code-error');
   const errTxt  = document.getElementById('join-code-error-text');
@@ -1032,9 +1052,25 @@ function handleJoinRoom() {
     return;
   }
 
-  closeModal('modal-join');
-  if (input) input.value = '';
-  showToast('تم الانضمام للروم بنجاح 🎉', 'success');
+  const btn = document.getElementById('btn-join-confirm');
+  setButtonLoading(btn, true);
+  try {
+    const result = await apiFetch('/rooms/join', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+    const room = normalizeBackendRoom(result.room);
+    state.rooms = [room, ...state.rooms.filter((item) => item.id !== room.id)];
+    renderRoomsList();
+    closeModal('modal-join');
+    if (input) input.value = '';
+    showToast('تم الانضمام للروم بنجاح 🎉', 'success');
+  } catch (error) {
+    if (errorEl) errorEl.style.display = 'flex';
+    if (errTxt) errTxt.textContent = 'كود الدعوة غير صحيح أو يجب تسجيل الدخول أولاً';
+  } finally {
+    setButtonLoading(btn, false);
+  }
 }
 
 async function handleCreateRoom() {

@@ -123,32 +123,33 @@ function syncAdminAccount() {
 function currentUser(db, req) {
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   const session = db.sessions.find((item) => item.token === token);
-  return session ? db.users.find((user) => user.id === session.userId) : db.users[0];
+  return session ? db.users.find((user) => user.id === session.userId) : null;
 }
 
 async function register(req, res) {
   const body = await readBody(req);
   if (!body.email) return badRequest(res, "email is required");
+  if (!body.password || String(body.password).length < 6) return badRequest(res, "password must be at least 6 characters");
   const result = mutate((db) => {
     let user = db.users.find((item) => item.email.toLowerCase() === body.email.toLowerCase());
-    if (!user) {
-      user = {
-        id: makeId("usr"),
-        name: body.name || "مستخدم جديد",
-        email: body.email,
-        phone: body.phone || "",
-        avatar: "SP",
-        role: "member",
-        password: body.password || "",
-        language: "ar",
-        createdAt: Date.now()
-      };
-      db.users.push(user);
-    }
+    if (user) return { error: "email_exists" };
+    user = {
+      id: makeId("usr"),
+      name: body.name || "مستخدم جديد",
+      email: body.email,
+      phone: body.phone || "",
+      avatar: "SP",
+      role: "member",
+      password: body.password,
+      language: "ar",
+      createdAt: Date.now()
+    };
+    db.users.push(user);
     const token = makeId("sess");
     db.sessions.push({ token, userId: user.id, createdAt: Date.now() });
     return { user, token };
   });
+  if (result.error === "email_exists") return badRequest(res, "email already exists");
   sendJson(res, 201, result);
 }
 
@@ -156,8 +157,7 @@ async function login(req, res) {
   const body = await readBody(req);
   const result = mutate((db) => {
     let user = db.users.find((item) => item.email.toLowerCase() === String(body.email || "").toLowerCase());
-    if (!user) user = db.users[0];
-    if (user.password && String(body.password || "") !== String(user.password)) {
+    if (!user || !user.password || String(body.password || "") !== String(user.password)) {
       return { error: "invalid_credentials" };
     }
     const token = makeId("sess");
@@ -170,12 +170,15 @@ async function login(req, res) {
 
 function me(req, res) {
   const db = readDb();
-  sendJson(res, 200, { user: currentUser(db, req) });
+  const user = currentUser(db, req);
+  if (!user) return sendJson(res, 401, { error: "unauthorized" });
+  sendJson(res, 200, { user });
 }
 
 function listRooms(req, res) {
   const db = readDb();
   const user = currentUser(db, req);
+  if (!user) return sendJson(res, 401, { error: "unauthorized" });
   const roomIds = new Set(db.memberships.filter((member) => member.userId === user.id).map((member) => member.roomId));
   const rooms = db.rooms.filter((room) => roomIds.has(room.id)).map((room) => enrichRoom(db, room, user.id));
   sendJson(res, 200, { rooms });
@@ -186,6 +189,7 @@ async function createRoom(req, res) {
   if (!body.name) return badRequest(res, "room name is required");
   const result = mutate((db) => {
     const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
     if (user.role !== "admin") return { forbidden: true };
     const code = uniqueRoomCode(db, body.name);
     const room = {
@@ -219,6 +223,7 @@ async function createRoom(req, res) {
     }
     return enrichRoom(db, room, user.id);
   });
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
   if (result?.forbidden) return sendJson(res, 403, { error: "forbidden", message: "admin account required" });
   sendJson(res, 201, { room: result });
 }
@@ -228,12 +233,14 @@ async function joinRoom(req, res) {
   const code = String(body.code || "").trim().toUpperCase();
   const result = mutate((db) => {
     const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
     const room = db.rooms.find((item) => item.code.toUpperCase() === code);
     if (!room) return null;
     const exists = db.memberships.some((member) => member.roomId === room.id && member.userId === user.id);
     if (!exists) db.memberships.push({ id: makeId("mem"), roomId: room.id, userId: user.id, role: "member", paidUntil: null, createdAt: Date.now() });
     return enrichRoom(db, room, user.id);
   });
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
   if (!result) return badRequest(res, "invalid room code");
   sendJson(res, 200, { room: result });
 }
