@@ -221,7 +221,6 @@ async function syncBackendRooms() {
   try {
     const data = await apiFetch('/rooms');
     const rooms = (data.rooms || []).map(normalizeBackendRoom);
-    if (!rooms.length) return;
     state.rooms = rooms;
     renderRoomsList();
     if (state.currentRoom) {
@@ -684,6 +683,13 @@ function renderRoomInfoCard(room) {
   if (!card) return;
   card.innerHTML = `
     <div class="info-row">
+      <span class="info-key">كود الدعوة</span>
+      <span class="info-val" style="gap:8px">
+        <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
+        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="نسخ كود الدعوة">نسخ</button>
+      </span>
+    </div>
+    <div class="info-row">
       <span class="info-key">الخدمة</span>
       <span class="info-val">${room.service}</span>
     </div>
@@ -722,6 +728,31 @@ function toggleRoomPassword() {
   passVisible = !passVisible;
   const val = document.getElementById('room-pass-val');
   if (val) val.classList.toggle('blurred', !passVisible);
+}
+
+async function copyRoomInviteCode() {
+  const code = state.currentRoom?.code;
+  if (!code) {
+    showToast('لا يوجد كود دعوة للروم', 'error');
+    return;
+  }
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(code);
+    } else {
+      const input = document.createElement('textarea');
+      input.value = code;
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+    }
+    showToast('تم نسخ كود الدعوة', 'success');
+  } catch (error) {
+    showToast('انسخ الكود يدوياً: ' + code, 'info', 6000);
+  }
 }
 
 // ===================================================

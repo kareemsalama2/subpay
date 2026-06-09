@@ -1,29 +1,17 @@
-const { spawnSync } = require("child_process");
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
+const { ImapFlow } = require("imapflow");
+const { simpleParser } = require("mailparser");
 const { extractOtp, otpExpiresAt } = require("./otp");
 const { makeId } = require("./store");
 
-function pythonExe() {
-  if (process.env.PYTHON_EXE) return process.env.PYTHON_EXE;
-  const bundled = path.join(
-    os.homedir(),
-    ".cache",
-    "codex-runtimes",
-    "codex-primary-runtime",
-    "dependencies",
-    "python",
-    "python.exe"
-  );
-  if (fs.existsSync(bundled)) return bundled;
-  return process.platform === "win32" ? "python" : "python3";
+function accountEmail(room) {
+  return room.inboundEmail;
 }
 
-function parseRawEmail(room, uid, rawMessage) {
-  const createdAt = rawMessage.dateMs || Date.now();
-  const subject = rawMessage.subject || "رسالة واردة";
-  const body = rawMessage.body || "";
+async function parseRawEmail(room, uid, raw) {
+  const parsed = await simpleParser(raw);
+  const createdAt = parsed.date ? parsed.date.getTime() : Date.now();
+  const subject = parsed.subject || "رسالة واردة";
+  const body = parsed.text || parsed.html || "";
   const otp = extractOtp(`${subject}\n${body}`);
   return {
     id: makeId("msg"),
@@ -31,8 +19,8 @@ function parseRawEmail(room, uid, rawMessage) {
     type: "email",
     externalId: `imap:${room.id}:${uid}`,
     subject,
-    body: body.slice(0, 4000),
-    from: rawMessage.from || room.inboundEmail,
+    body: String(body).slice(0, 4000),
+    from: parsed.from?.text || room.inboundEmail,
     sourceEmail: accountEmail(room),
     otp,
     otpExpiresAt: otp ? otpExpiresAt(createdAt) : null,
@@ -40,47 +28,53 @@ function parseRawEmail(room, uid, rawMessage) {
   };
 }
 
-function accountEmail(room) {
-  return room.inboundEmail;
-}
-
 async function pollRoomImap(db, room, account) {
   if (!account.email || !account.appPassword) throw new Error("Missing IMAP email/app password.");
-  const script = path.join(__dirname, "imap_poll.py");
-  const input = JSON.stringify({
+
+  const client = new ImapFlow({
     host: account.host || "imap.gmail.com",
     port: Number(account.port || 993),
-    email: account.email,
-    appPassword: account.appPassword,
-    lastUid: Number(account.lastUid || 0),
-    limit: Number(account.limit || 20)
+    secure: account.secure !== false,
+    auth: {
+      user: account.email,
+      pass: account.appPassword
+    },
+    logger: false
   });
-  let result = spawnSync(pythonExe(), [script], {
-    input,
-    encoding: "utf8",
-    timeout: 120000
-  });
-  if (result.error && result.error.code === "ENOENT" && !process.env.PYTHON_EXE) {
-    result = spawnSync("python", [script], {
-      input,
-      encoding: "utf8",
-      timeout: 120000
-    });
-  }
-  if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(result.stderr || "IMAP poll failed");
-  const payload = JSON.parse(result.stdout || "{}");
-  const existing = new Set(db.messages.map((msg) => msg.externalId).filter(Boolean));
+
   const created = [];
-  for (const item of payload.messages || []) {
-    const externalId = `imap:${room.id}:${item.uid}`;
-    account.lastUid = Math.max(Number(account.lastUid || 0), Number(item.uid || 0));
-    if (existing.has(externalId)) continue;
-    const parsed = parseRawEmail(room, item.uid, item);
-    db.messages.unshift(parsed);
-    created.push(parsed);
+  const existing = new Set(db.messages.map((msg) => msg.externalId).filter(Boolean));
+
+  await client.connect();
+  try {
+    const lock = await client.getMailboxLock("INBOX");
+    try {
+      const lastUid = Number(account.lastUid || 0);
+      const range = lastUid ? `${lastUid + 1}:*` : "1:*";
+      const messages = [];
+
+      for await (const message of client.fetch(range, { uid: true, source: true }, { uid: true })) {
+        messages.push(message);
+      }
+
+      const limit = Number(account.limit || 20);
+      for (const item of messages.slice(-limit)) {
+        const uid = Number(item.uid || 0);
+        if (!uid) continue;
+        account.lastUid = Math.max(Number(account.lastUid || 0), uid);
+        const externalId = `imap:${room.id}:${uid}`;
+        if (existing.has(externalId)) continue;
+        const parsed = await parseRawEmail(room, uid, item.source);
+        db.messages.unshift(parsed);
+        created.push(parsed);
+      }
+    } finally {
+      lock.release();
+    }
+  } finally {
+    await client.logout().catch(() => {});
   }
-  if (payload.lastUid) account.lastUid = Math.max(Number(account.lastUid || 0), Number(payload.lastUid));
+
   return created;
 }
 
