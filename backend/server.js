@@ -30,6 +30,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && path === "/api/rooms/join") return await joinRoom(req, res);
     if (req.method === "PATCH" && path.match(/^\/api\/rooms\/[^/]+\/settings$/)) return await updateRoomSettings(req, res, path);
     if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/members$/)) return await addRoomMember(req, res, path);
+    if (req.method === "PATCH" && path.match(/^\/api\/rooms\/[^/]+\/members\/[^/]+\/payment$/)) return await updateMemberPayment(req, res, path);
+    if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/members\/reset-payments$/)) return await resetRoomPayments(req, res, path);
     if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/messages$/)) return await addRoomMessage(req, res, path);
     if (req.method === "GET" && path.match(/^\/api\/rooms\/[^/]+\/messages$/)) return roomMessages(req, res, path);
     if (req.method === "GET" && path.match(/^\/api\/rooms\/[^/]+\/gmail\/auth-url$/)) return gmailAuthUrl(req, res, path);
@@ -209,6 +211,7 @@ async function createRoom(req, res) {
       subscriptionEmail: body.subscriptionEmail || "",
       monthlyPrice: Number(body.monthlyPrice || 0),
       otpTtlMinutes: clampOtpTtl(body.otpTtlMinutes),
+      imageUrl: safeImageUrl(body.imageUrl),
       password: body.password || "",
       createdAt: Date.now()
     };
@@ -307,6 +310,53 @@ async function addRoomMember(req, res, path) {
   if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
   if (!result) return notFound(res);
   sendJson(res, 200, result);
+}
+
+async function updateMemberPayment(req, res, path) {
+  const parts = path.split("/");
+  const roomId = parts[3];
+  const membershipId = parts[5];
+  const body = await readBody(req);
+  const result = mutate((db) => {
+    const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
+    const room = db.rooms.find((item) => item.id === roomId);
+    if (!room) return null;
+    const requester = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+    if (!requester || !["owner", "admin"].includes(requester.role) && user.role !== "admin") return { forbidden: true };
+    const member = db.memberships.find((item) => item.id === membershipId && item.roomId === roomId);
+    if (!member || member.role === "owner") return { notFound: true };
+    member.paidUntil = body.paid ? nextPaidUntil() : null;
+    member.paymentUpdatedAt = Date.now();
+    return enrichRoom(db, room, user.id);
+  });
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
+  if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
+  if (result?.notFound || !result) return notFound(res);
+  sendJson(res, 200, { room: result });
+}
+
+async function resetRoomPayments(req, res, path) {
+  const roomId = path.split("/")[3];
+  const result = mutate((db) => {
+    const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
+    const room = db.rooms.find((item) => item.id === roomId);
+    if (!room) return null;
+    const requester = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+    if (!requester || !["owner", "admin"].includes(requester.role) && user.role !== "admin") return { forbidden: true };
+    db.memberships
+      .filter((member) => member.roomId === roomId && member.role !== "owner")
+      .forEach((member) => {
+        member.paidUntil = null;
+        member.paymentUpdatedAt = Date.now();
+      });
+    return enrichRoom(db, room, user.id);
+  });
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
+  if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
+  if (!result) return notFound(res);
+  sendJson(res, 200, { room: result });
 }
 
 async function addRoomMessage(req, res, path) {
@@ -477,6 +527,20 @@ function enrichRoom(db, room, userId) {
       .map((member) => ({ ...member, user: db.users.find((user) => user.id === member.userId) })),
     messages: db.messages.filter((message) => message.roomId === room.id)
   };
+}
+
+function nextPaidUntil() {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function safeImageUrl(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.startsWith("data:image/") && text.length <= 250000) return text;
+  if (/^https?:\/\//i.test(text) && text.length <= 1000) return text;
+  return "";
 }
 
 function uniqueRoomCode(db, name) {

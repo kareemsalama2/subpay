@@ -178,12 +178,13 @@ function normalizeBackendRoom(room) {
     service: room.name,
     code: room.code,
     ...icon,
+    imageUrl: room.imageUrl || '',
     price: room.monthlyPrice || 0,
     currency: 'Ø¬Ù†ÙŠÙ‡',
     members: members.length,
     maxMembers: Math.max(members.length, 5),
-    isPaid: true,
     isAdmin: ['owner', 'admin'].includes(room.role),
+    isPaid: ['owner', 'admin'].includes(room.role) || Boolean(room.paidUntil),
     username: room.subscriptionEmail || room.inboundEmail || '',
     password: room.password || '',
     otpTtlMinutes: room.otpTtlMinutes || 5,
@@ -206,6 +207,7 @@ function normalizeBackendRoom(room) {
       email: member.user?.email || '',
       role: member.role,
       paid: Boolean(member.paidUntil),
+      paidUntil: member.paidUntil || '',
       avatar: member.user?.avatar || (member.user?.name || 'S').charAt(0),
     })),
   };
@@ -743,11 +745,7 @@ function openRoom(roomId) {
     return;
   }
 
-  // Room header
-  document.getElementById('room-detail-icon').textContent = room.icon;
-  document.getElementById('room-detail-name').textContent = room.name;
-  document.getElementById('room-detail-meta').textContent =
-    room.members + ' Ø£Ø¹Ø¶Ø§Ø¡ Â· ' + (room.isPaid ? 'Ù…Ø¯ÙÙˆØ¹ âœ“' : 'ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹');
+  renderRoomHeader(room);
 
   // Info card
   renderRoomInfoCard(room);
@@ -773,6 +771,22 @@ function openRoom(roomId) {
   switchTab('room', 'data');
 
   navigateTo('screen-room');
+}
+
+function renderRoomHeader(room) {
+  const iconEl = document.getElementById('room-detail-icon');
+  if (iconEl) {
+    if (room.imageUrl) {
+      iconEl.innerHTML = `<img src="${room.imageUrl}" alt="">`;
+      iconEl.classList.add('has-image');
+    } else {
+      iconEl.textContent = room.icon;
+      iconEl.classList.remove('has-image');
+    }
+  }
+  document.getElementById('room-detail-name').textContent = room.name;
+  document.getElementById('room-detail-meta').textContent =
+    `${room.members} أعضاء · ${room.isAdmin ? `${room.membersList.filter((m) => m.paid).length} مدفوع` : (room.isPaid ? 'مدفوع' : 'مطلوب الدفع')}`;
 }
 
 function renderRoomInfoCard(room) {
@@ -965,20 +979,25 @@ function renderRoomMembers(room) {
   if (actDiv) {
     actDiv.style.display = room.isAdmin ? 'block' : 'none';
     if (room.isAdmin) {
+      const paidCount = room.membersList.filter((member) => member.paid).length;
       actDiv.innerHTML = `
         <div class="info-card" style="margin-bottom:12px">
+          <div class="info-row">
+            <span class="info-key">المشتركين</span>
+            <span class="info-val">${room.membersList.length} عضو · ${paidCount} On</span>
+          </div>
           <div class="info-row" style="border-bottom:none">
-            <span class="info-key">ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…</span>
+            <span class="info-key">كود الروم</span>
             <span class="info-val" style="gap:8px">
               <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
-              <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Ù†Ø³Ø® ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…">Ù†Ø³Ø®</button>
+              <button class="toggle-vis" onclick="copyRoomInviteCode()" title="نسخ كود الروم">نسخ</button>
             </span>
           </div>
         </div>
-        <button class="btn btn-outline" style="display:flex;align-items:center;gap:8px" onclick="openModal('modal-add-member')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          Ø¥Ø¶Ø§ÙØ© Ø¹Ø¶Ùˆ
-        </button>
+        <div class="admin-action-row">
+          <button class="btn btn-outline" onclick="openModal('modal-add-member')">إضافة عضو</button>
+          <button class="btn btn-outline" onclick="resetRoomPayments()">تجديد شهر: الكل Off</button>
+        </div>
       `;
     }
   }
@@ -992,13 +1011,14 @@ function renderRoomMembers(room) {
         <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">
           ${roleBadge(m.role)}
           ${m.paid
-            ? '<span class="badge badge-success">Ù…Ø¯ÙÙˆØ¹</span>'
-            : '<span class="badge badge-danger">ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹</span>'}
+            ? '<span class="badge badge-success">On · مدفوع</span>'
+            : '<span class="badge badge-danger">Off · مطلوب دفع</span>'}
         </div>
       </div>
       ${(room.isAdmin && m.role !== 'owner') ? `
         <div class="member-actions">
-          <button class="btn btn-xs btn-danger" onclick="confirmRemoveMember('${m.id}','${m.name}')">Ø¥Ø²Ø§Ù„Ø©</button>
+          <button class="btn btn-xs ${m.paid ? 'btn-danger' : 'btn-success'}" onclick="toggleMemberPayment('${m.id}', ${m.paid ? 'false' : 'true'})">${m.paid ? 'Off' : 'On'}</button>
+          <button class="btn btn-xs btn-danger" onclick="confirmRemoveMember('${m.id}','${m.name}')">إزالة</button>
         </div>` : ''}
     </div>
   `).join('');
@@ -1016,6 +1036,41 @@ function roleBadge(role) {
 function confirmRemoveMember(memberId) {
   state.memberToRemove = memberId;
   openModal('modal-remove-member');
+}
+
+async function toggleMemberPayment(memberId, paid) {
+  if (!state.currentRoom?.id) return;
+  try {
+    const result = await apiFetch(`/rooms/${state.currentRoom.id}/members/${memberId}/payment`, {
+      method: 'PATCH',
+      body: JSON.stringify({ paid }),
+    });
+    const room = normalizeBackendRoom(result.room);
+    state.currentRoom = room;
+    state.rooms = [room, ...state.rooms.filter((item) => item.id !== room.id)];
+    renderRoomHeader(room);
+    renderRoomMembers(room);
+    renderRoomsList();
+    showToast(paid ? 'تم فتح وصول العضو' : 'تم إيقاف وصول العضو', 'success');
+  } catch (error) {
+    showToast(error.message || 'فشل تعديل حالة الدفع', 'error');
+  }
+}
+
+async function resetRoomPayments() {
+  if (!state.currentRoom?.id) return;
+  try {
+    const result = await apiFetch(`/rooms/${state.currentRoom.id}/members/reset-payments`, { method: 'POST' });
+    const room = normalizeBackendRoom(result.room);
+    state.currentRoom = room;
+    state.rooms = [room, ...state.rooms.filter((item) => item.id !== room.id)];
+    renderRoomHeader(room);
+    renderRoomMembers(room);
+    renderRoomsList();
+    showToast('تم إيقاف كل المشتركين غير الأونر لبداية التجديد', 'success', 6000);
+  } catch (error) {
+    showToast(error.message || 'فشل بدء دورة التجديد', 'error');
+  }
 }
 
 // ===================================================
@@ -1267,6 +1322,7 @@ async function handleCreateRoom() {
   }
 
   const name = document.getElementById('create-room-name')?.value.trim();
+  const imageFile = document.getElementById('create-room-image')?.files?.[0];
   const subscriptionEmail = document.getElementById('create-room-sub-email')?.value.trim();
   const password = document.getElementById('create-room-sub-password')?.value.trim();
   const monthlyPrice = document.getElementById('create-room-price')?.value.trim();
@@ -1286,10 +1342,12 @@ async function handleCreateRoom() {
   const btn = document.getElementById('btn-create-room-confirm');
   setButtonLoading(btn, true);
   try {
+    const imageUrl = imageFile ? await imageFileToDataUrl(imageFile) : '';
     const result = await apiFetch('/rooms', {
       method: 'POST',
       body: JSON.stringify({
         name,
+        imageUrl,
         subscriptionEmail,
         password,
         monthlyPrice: Number(monthlyPrice || 0),
@@ -1303,7 +1361,7 @@ async function handleCreateRoom() {
     state.rooms.unshift(room);
     renderRoomsList();
     closeModal('modal-create-room');
-    ['create-room-name', 'create-room-sub-email', 'create-room-sub-password', 'create-room-price', 'create-room-otp-ttl', 'create-room-imap-email', 'create-room-imap-password']
+    ['create-room-name', 'create-room-image', 'create-room-sub-email', 'create-room-sub-password', 'create-room-price', 'create-room-otp-ttl', 'create-room-imap-email', 'create-room-imap-password']
       .forEach((id) => {
         const input = document.getElementById(id);
         if (input) input.value = '';
@@ -1390,6 +1448,35 @@ function setButtonLoading(btn, loading) {
   if (!btn) return;
   btn.classList.toggle('btn-loading', loading);
   btn.disabled = loading;
+}
+
+function imageFileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) {
+      resolve('');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('فشل قراءة الصورة'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('فشل تجهيز الصورة'));
+      img.onload = () => {
+        const size = 360;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(size / img.width, size / img.height);
+        const width = img.width * scale;
+        const height = img.height * scale;
+        ctx.drawImage(img, (size - width) / 2, (size - height) / 2, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function togglePasswordVisibility(inputId) {
