@@ -85,6 +85,8 @@ function setEnglishStaticText() {
     ['create-room-sub-password', 'Subscription password'],
     ['create-room-price', 'Monthly price'],
     ['create-room-otp-ttl', 'OTP expiry in minutes'],
+    ['create-room-renew-date', 'Renewal date'],
+    ['create-room-expires-at', 'Expiration date'],
     ['create-room-imap-email', 'Gmail inbox for OTP'],
     ['create-room-imap-password', 'Gmail App Password'],
     ['admin-message-subject', 'Message title'],
@@ -245,7 +247,8 @@ function roomIconFor(name = '') {
 function normalizeBackendRoom(room) {
   const icon = roomIconFor(room.name);
   const members = Array.isArray(room.members) ? room.members : [];
-  const messages = Array.isArray(room.messages) ? room.messages : [];
+  const messages = (Array.isArray(room.messages) ? room.messages : [])
+    .filter((message) => message.otp || ['admin', 'payment_request'].includes(message.type));
   const latestOtpMessage = messages.find((message) => message.otp);
 
   return {
@@ -253,7 +256,7 @@ function normalizeBackendRoom(room) {
     backendRoom: true,
     name: room.name,
     service: room.name,
-    code: room.code,
+    code: room.code || '',
     ...icon,
     imageUrl: room.imageUrl || '',
     price: room.monthlyPrice || 0,
@@ -265,18 +268,22 @@ function normalizeBackendRoom(room) {
     username: room.subscriptionEmail || room.inboundEmail || '',
     password: room.password || '',
     otpTtlMinutes: room.otpTtlMinutes || 5,
-    renewDate: room.paidUntil || 'Not set',
+    renewDate: room.renewDate || room.paidUntil || 'Not set',
+    expiresAt: room.expiresAt || '',
     latestOtp: latestOtpMessage?.otp || null,
     latestOtpMessageId: latestOtpMessage?.id || null,
     latestOtpCreatedAt: latestOtpMessage?.createdAt || null,
     latestOtpExpiresAt: latestOtpMessage?.otpExpiresAt || null,
     notifications: messages.slice(0, 10).map((message) => ({
       id: message.id,
-      title: message.otp ? `New OTP - ${room.name}` : (message.subject || 'New message'),
+      title: message.otp ? `ChatGPT OTP - ${room.name}` : (message.subject || 'New message'),
       body: message.otp ? `Verification code: ${message.otp}` : (message.body || ''),
       time: formatRelativeTime(message.createdAt),
-      type: message.otp ? 'info' : 'success',
+      type: message.type === 'payment_request' ? 'warning' : (message.otp ? 'info' : 'success'),
       unread: false,
+      createdAt: message.createdAt || Date.now(),
+      roomId: room.id,
+      roomName: room.name,
     })),
     membersList: members.map((member) => ({
       id: member.id,
@@ -312,12 +319,26 @@ function formatOtpStatus(message) {
   return `${expired ? 'Expired' : 'Arrived'}${arrived ? ` at ${arrived}` : ''}`;
 }
 
+function syncGlobalNotificationsFromRooms() {
+  const notifications = state.rooms
+    .flatMap((room) => (room.notifications || []).map((item) => ({
+      ...item,
+      roomId: item.roomId || room.id,
+      roomName: item.roomName || room.name,
+    })))
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+    .slice(0, 40);
+  state.notifications = notifications;
+}
+
 async function syncBackendRooms() {
   try {
     const data = await apiFetch('/rooms');
     const rooms = (data.rooms || []).map(normalizeBackendRoom);
     state.rooms = rooms;
+    syncGlobalNotificationsFromRooms();
     renderRoomsList();
+    renderNotificationsList();
     if (state.currentUser) loadHomeScreen();
     if (state.currentRoom) {
       const updated = state.rooms.find((room) => room.id === state.currentRoom.id);
@@ -445,18 +466,23 @@ function applyOtpMessageDedup(message) {
       state.currentRoom.notifications = [
         {
           id: message.id,
-          title: `OTP Ø¬Ø¯ÙŠØ¯ â€” ${state.currentRoom.name}`,
-          body: `ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„Ø¬Ø¯ÙŠØ¯: ${message.otp} (${formatOtpStatus(message)})`,
+          title: `ChatGPT OTP - ${state.currentRoom.name}`,
+          body: `Verification code: ${message.otp} (${formatOtpStatus(message)})`,
           time: formatRelativeTime(message.createdAt),
           type: 'info',
           unread: true,
+          createdAt: message.createdAt || Date.now(),
+          roomId: state.currentRoom.id,
+          roomName: state.currentRoom.name,
         },
         ...(state.currentRoom.notifications || []).filter((item) => item.id !== message.id),
       ];
+      syncGlobalNotificationsFromRooms();
+      renderNotificationsList();
       renderRoomNotifications(state.currentRoom);
     }
   }
-  if (isNewMessage) showToast(`OTP Ø¬Ø¯ÙŠØ¯: ${message.otp}`, 'success');
+  if (isNewMessage) showToast(`New OTP: ${message.otp}`, 'success');
 }
 
 function applyRoomMessage(message) {
@@ -474,13 +500,18 @@ function applyRoomMessage(message) {
       title: message.subject || 'Ø±Ø³Ø§Ù„Ø© Ø¬Ø¯ÙŠØ¯Ø©',
       body: message.body || '',
       time: formatRelativeTime(message.createdAt),
-      type: message.type === 'admin' ? 'success' : 'info',
+      type: message.type === 'payment_request' ? 'warning' : (message.type === 'admin' ? 'success' : 'info'),
       unread: true,
+      createdAt: message.createdAt || Date.now(),
+      roomId: message.roomId,
+      roomName: state.currentRoom.name,
     },
     ...(state.currentRoom.notifications || []),
   ];
+  syncGlobalNotificationsFromRooms();
+  renderNotificationsList();
   renderRoomNotifications(state.currentRoom);
-  showToast(message.subject || 'Ø±Ø³Ø§Ù„Ø© Ø¬Ø¯ÙŠØ¯Ø©', 'info');
+  showToast(message.subject || 'New message', 'info');
 }
 
 async function loadLatestBackendOtp(room) {
@@ -527,7 +558,8 @@ function connectRoomOtpRealtime(room) {
     startRoomOtpPolling(room);
     return;
   }
-  state.otpEventSource = new EventSource(`${API_BASE}/rooms/${room.id}/events`);
+  const token = encodeURIComponent(state.authToken || '');
+  state.otpEventSource = new EventSource(`${API_BASE}/rooms/${room.id}/events?token=${token}`);
   state.otpEventSource.addEventListener('message', (event) => {
     applyRoomMessage(JSON.parse(event.data));
   });
@@ -609,6 +641,7 @@ function loginSuccess(user, rooms, notifs) {
   state.currentUser   = user;
   state.rooms         = JSON.parse(JSON.stringify(rooms)); // deep copy
   state.notifications = JSON.parse(JSON.stringify(notifs));
+  syncGlobalNotificationsFromRooms();
   loadHomeScreen();
   navigateTo('screen-home');
   setActiveNav('home');
@@ -816,7 +849,7 @@ function openRoom(roomId) {
     // Locked screen
     document.getElementById('unpaid-room-name').textContent = room.name;
     document.getElementById('locked-reason').textContent =
-      `${room.name} has not been paid for this month. Pay to access the room data.`;
+      `${room.name} is locked until the admin turns your access On. Submit payment, then wait for admin approval.`;
     document.getElementById('locked-amount').innerHTML =
       room.price + ' <span>' + room.currency + '/month</span>';
     navigateTo('screen-unpaid');
@@ -883,17 +916,29 @@ function renderRoomInfoCard(room) {
         <span class="info-val" style="gap:8px">
           <input id="room-otp-ttl-input" class="form-input ltr" type="number" min="1" max="60" value="${room.otpTtlMinutes || 5}" style="width:82px;padding:8px 10px">
           <span>min</span>
-          <button class="toggle-vis" onclick="saveRoomOtpTtl()" title="Save OTP expiry">Save</button>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Renewal date</span>
+        <span class="info-val">
+          <input id="room-renew-date-input" class="form-input ltr" type="date" value="${room.renewDate !== 'Not set' ? room.renewDate : ''}" style="width:150px;padding:8px 10px">
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Expiration date</span>
+        <span class="info-val" style="gap:8px">
+          <input id="room-expires-at-input" class="form-input ltr" type="date" value="${room.expiresAt || ''}" style="width:150px;padding:8px 10px">
+          <button class="toggle-vis" onclick="saveRoomSettings()" title="Save room settings">Save</button>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Invite code</span>
+        <span class="info-val" style="gap:8px">
+          <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
+          <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Copy invite code">Copy</button>
         </span>
       </div>
     ` : ''}
-    <div class="info-row">
-      <span class="info-key">Invite code</span>
-      <span class="info-val" style="gap:8px">
-        <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
-        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Copy invite code">Copy</button>
-      </span>
-    </div>
     <div class="info-row">
       <span class="info-key">Service</span>
       <span class="info-val">${room.service}</span>
@@ -905,6 +950,10 @@ function renderRoomInfoCard(room) {
     <div class="info-row">
       <span class="info-key">Renewal date</span>
       <span class="info-val">${room.renewDate}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Expiration date</span>
+      <span class="info-val">${room.expiresAt || 'Not set'}</span>
     </div>
     <div class="info-row">
       <span class="info-key">Username</span>
@@ -935,27 +984,36 @@ function toggleRoomPassword() {
   if (val) val.classList.toggle('blurred', !passVisible);
 }
 
-async function saveRoomOtpTtl() {
+async function saveRoomSettings() {
   if (!state.currentRoom?.id) return;
   const input = document.getElementById('room-otp-ttl-input');
+  const renewDate = document.getElementById('room-renew-date-input')?.value || '';
+  const expiresAt = document.getElementById('room-expires-at-input')?.value || '';
   const otpTtlMinutes = Number(input?.value || 5);
   if (!Number.isFinite(otpTtlMinutes) || otpTtlMinutes < 1 || otpTtlMinutes > 60) {
-    showToast('مدة OTP لازم تكون من 1 إلى 60 دقيقة', 'error');
+    showToast('OTP expiry must be between 1 and 60 minutes', 'error');
     return;
   }
   try {
     const result = await apiFetch(`/rooms/${state.currentRoom.id}/settings`, {
       method: 'PATCH',
-      body: JSON.stringify({ otpTtlMinutes }),
+      body: JSON.stringify({ otpTtlMinutes, renewDate, expiresAt }),
     });
     const room = normalizeBackendRoom(result.room);
     state.currentRoom = room;
     state.rooms = [room, ...state.rooms.filter((item) => item.id !== room.id)];
+    syncGlobalNotificationsFromRooms();
     renderRoomInfoCard(room);
-    showToast('تم حفظ مدة صلاحية OTP', 'success');
+    renderRoomsList();
+    renderNotificationsList();
+    showToast('Room settings saved', 'success');
   } catch (error) {
-    showToast(error.message || 'فشل حفظ مدة OTP', 'error');
+    showToast(error.message || 'Failed to save room settings', 'error');
   }
+}
+
+async function saveRoomOtpTtl() {
+  return saveRoomSettings();
 }
 
 async function copyRoomInviteCode() {
@@ -1209,32 +1267,41 @@ function selectPaymentMethod(el, method) {
   if (chk) chk.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
 }
 
-function handlePayment() {
+async function handlePayment() {
   const btn = document.getElementById('btn-pay');
   setButtonLoading(btn, true);
 
-  setTimeout(() => {
+  try {
+    if (!state.currentRoom) return;
+    await apiFetch(`/rooms/${state.currentRoom.id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'payment_request',
+        subject: 'Payment submitted',
+        body: `${state.currentUser?.name || 'Member'} marked payment as sent by ${paymentMethodLabel(state.selectedPaymentMethod)}. Waiting for admin approval.`,
+      }),
+    });
+    DEMO_HISTORY.unshift({
+      id: 'h_' + Date.now(),
+      room: state.currentRoom.name,
+      amount: state.currentRoom.price,
+      date: 'now',
+      method: paymentMethodLabel(state.selectedPaymentMethod),
+      status: 'pending',
+    });
+    await syncBackendRooms();
+    loadHomeScreen();
+    showToast('Payment submitted. Waiting for admin approval.', 'success', 5000);
+    navigateTo('screen-home');
+  } catch (error) {
+    showToast(error.message || 'Failed to submit payment request', 'error');
+  } finally {
     setButtonLoading(btn, false);
-    if (state.currentRoom) {
-      state.currentRoom.isPaid = true;
-      // Add to history
-      DEMO_HISTORY.unshift({
-        id:     'h_' + Date.now(),
-        room:   state.currentRoom.name,
-        amount: state.currentRoom.price,
-        date:   'Ø§Ù„Ø¢Ù†',
-        method: paymentMethodLabel(state.selectedPaymentMethod),
-        status: 'success',
-      });
-      loadHomeScreen();
-      showToast('ØªÙ… Ø§Ù„Ø¯ÙØ¹ Ø¨Ù†Ø¬Ø§Ø­ âœ…', 'success');
-      setTimeout(() => openRoom(state.currentRoom.id), 700);
-    }
-  }, 1500);
+  }
 }
 
 function paymentMethodLabel(m) {
-  return { instapay:'InstaPay', wallet:'Ø§Ù„Ù…Ø­ÙØ¸Ø©', card:'Ø¨Ø·Ø§Ù‚Ø© Ø¨Ù†ÙƒÙŠØ©' }[m] || m;
+  return { instapay:'InstaPay', wallet:'Wallet', card:'Bank card' }[m] || m;
 }
 
 // ===================================================
@@ -1244,7 +1311,7 @@ function renderNotificationsList() {
   const list = document.getElementById('notifs-list');
   if (!list) return;
   if (state.notifications.length === 0) {
-    list.innerHTML = emptyState('Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª', 'bell');
+    list.innerHTML = emptyState('No notifications yet', 'bell');
     return;
   }
   list.innerHTML = state.notifications.map(n => notifItemHTML(n, true)).join('');
@@ -1405,6 +1472,8 @@ async function handleCreateRoom() {
   const password = document.getElementById('create-room-sub-password')?.value.trim();
   const monthlyPrice = document.getElementById('create-room-price')?.value.trim();
   const otpTtlMinutes = document.getElementById('create-room-otp-ttl')?.value.trim();
+  const renewDate = document.getElementById('create-room-renew-date')?.value || '';
+  const expiresAt = document.getElementById('create-room-expires-at')?.value || '';
   const imapEmail = document.getElementById('create-room-imap-email')?.value.trim();
   const imapAppPassword = document.getElementById('create-room-imap-password')?.value.trim();
 
@@ -1430,6 +1499,8 @@ async function handleCreateRoom() {
         password,
         monthlyPrice: Number(monthlyPrice || 0),
         otpTtlMinutes: Number(otpTtlMinutes || 5),
+        renewDate,
+        expiresAt,
         inboundEmail: imapEmail,
         imapEmail,
         imapAppPassword,
@@ -1439,7 +1510,7 @@ async function handleCreateRoom() {
     state.rooms.unshift(room);
     renderRoomsList();
     closeModal('modal-create-room');
-    ['create-room-name', 'create-room-image', 'create-room-sub-email', 'create-room-sub-password', 'create-room-price', 'create-room-otp-ttl', 'create-room-imap-email', 'create-room-imap-password']
+    ['create-room-name', 'create-room-image', 'create-room-sub-email', 'create-room-sub-password', 'create-room-price', 'create-room-otp-ttl', 'create-room-renew-date', 'create-room-expires-at', 'create-room-imap-email', 'create-room-imap-password']
       .forEach((id) => {
         const input = document.getElementById(id);
         if (input) input.value = '';

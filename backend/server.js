@@ -130,7 +130,7 @@ function syncAdminAccount() {
 }
 
 function currentUser(db, req) {
-  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "") || routeQuery(req).get("token") || "";
   const session = db.sessions.find((item) => item.token === token);
   return session ? db.users.find((user) => user.id === session.userId) : null;
 }
@@ -211,6 +211,8 @@ async function createRoom(req, res) {
       subscriptionEmail: body.subscriptionEmail || "",
       monthlyPrice: Number(body.monthlyPrice || 0),
       otpTtlMinutes: clampOtpTtl(body.otpTtlMinutes),
+      renewDate: safeDateValue(body.renewDate),
+      expiresAt: safeDateValue(body.expiresAt),
       imageUrl: safeImageUrl(body.imageUrl),
       password: body.password || "",
       createdAt: Date.now()
@@ -266,7 +268,9 @@ async function updateRoomSettings(req, res, path) {
     if (!room) return null;
     const membership = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
     if (!membership || !["owner", "admin"].includes(membership.role) && user.role !== "admin") return { forbidden: true };
-    room.otpTtlMinutes = clampOtpTtl(body.otpTtlMinutes);
+    if (body.otpTtlMinutes !== undefined) room.otpTtlMinutes = clampOtpTtl(body.otpTtlMinutes);
+    if (body.renewDate !== undefined) room.renewDate = safeDateValue(body.renewDate);
+    if (body.expiresAt !== undefined) room.expiresAt = safeDateValue(body.expiresAt);
     return enrichRoom(db, room, user.id);
   });
   if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
@@ -391,14 +395,21 @@ async function addRoomMessage(req, res, path) {
   if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
   if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
   if (!result) return notFound(res);
-  notifyRoom(roomId, "message", result);
-  sendJson(res, 201, { message: result });
+  const payload = publicMessage(result);
+  if (payload) notifyRoom(roomId, "message", payload);
+  sendJson(res, 201, { message: payload || result });
 }
 
 function roomMessages(req, res, path) {
   const roomId = path.split("/")[3];
   const db = readDb();
-  sendJson(res, 200, { messages: db.messages.filter((msg) => msg.roomId === roomId) });
+  const user = currentUser(db, req);
+  if (!user) return sendJson(res, 401, { error: "unauthorized" });
+  const membership = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+  if (!membership && user.role !== "admin") return sendJson(res, 403, { error: "forbidden" });
+  const canReadMessages = user.role === "admin" || ["owner", "admin"].includes(membership?.role) || Boolean(membership?.paidUntil);
+  if (!canReadMessages) return sendJson(res, 200, { messages: [] });
+  sendJson(res, 200, { messages: visibleRoomMessages(db, roomId) });
 }
 
 function gmailAuthUrl(req, res, path) {
@@ -424,9 +435,14 @@ async function gmailCallback(req, res) {
 
 async function pollRoom(req, res, path) {
   const roomId = path.split("/")[3];
+  const db = readDb();
+  const user = currentUser(db, req);
+  if (!user) return sendJson(res, 401, { error: "unauthorized" });
+  if (!canReadRoom(db, roomId, user)) return sendJson(res, 403, { error: "forbidden" });
   const result = await pollRoomById(roomId);
-  result.forEach((message) => notifyRoom(roomId, "message", message));
-  sendJson(res, 200, { created: result });
+  const visible = result.map(publicMessage).filter(Boolean);
+  visible.forEach((message) => notifyRoom(roomId, "message", message));
+  sendJson(res, 200, { created: visible });
 }
 
 async function saveRoomImap(req, res, path) {
@@ -458,9 +474,14 @@ async function saveRoomImap(req, res, path) {
 
 async function pollRoomImap(req, res, path) {
   const roomId = path.split("/")[3];
+  const db = readDb();
+  const user = currentUser(db, req);
+  if (!user) return sendJson(res, 401, { error: "unauthorized" });
+  if (!canReadRoom(db, roomId, user)) return sendJson(res, 403, { error: "forbidden" });
   const result = await pollRoomImapById(roomId);
-  result.forEach((message) => notifyRoom(roomId, "message", message));
-  sendJson(res, 200, { created: result });
+  const visible = result.map(publicMessage).filter(Boolean);
+  visible.forEach((message) => notifyRoom(roomId, "message", message));
+  sendJson(res, 200, { created: visible });
 }
 
 async function pollRoomById(roomId) {
@@ -485,7 +506,7 @@ function startGmailPoller() {
       for (const account of db.gmailAccounts) {
         try {
           const created = await pollRoomById(account.roomId);
-          created.forEach((message) => notifyRoom(account.roomId, "message", message));
+          created.map(publicMessage).filter(Boolean).forEach((message) => notifyRoom(account.roomId, "message", message));
         } catch (error) {
           console.error(`Gmail poll failed for room ${account.roomId}:`, error.message);
         }
@@ -494,7 +515,7 @@ function startGmailPoller() {
         try {
           if (!account.email || !account.appPassword) continue;
           const created = await pollRoomImapById(account.roomId);
-          created.forEach((message) => notifyRoom(account.roomId, "message", message));
+          created.map(publicMessage).filter(Boolean).forEach((message) => notifyRoom(account.roomId, "message", message));
         } catch (error) {
           console.error(`IMAP poll failed for room ${account.roomId}:`, error.message);
         }
@@ -518,15 +539,64 @@ async function pollRoomImapById(roomId) {
 
 function enrichRoom(db, room, userId) {
   const membership = db.memberships.find((member) => member.roomId === room.id && member.userId === userId);
-  return {
+  const user = db.users.find((item) => item.id === userId);
+  const isAdmin = user?.role === "admin" || ["owner", "admin"].includes(membership?.role);
+  const isPaid = isAdmin || Boolean(membership?.paidUntil);
+  const enriched = {
     ...room,
     role: membership?.role || "member",
     paidUntil: membership?.paidUntil || null,
     members: db.memberships
       .filter((member) => member.roomId === room.id)
       .map((member) => ({ ...member, user: db.users.find((user) => user.id === member.userId) })),
-    messages: db.messages.filter((message) => message.roomId === room.id)
+    messages: visibleRoomMessages(db, room.id)
   };
+  if (!isAdmin) {
+    enriched.code = "";
+    enriched.inviteLink = "";
+    enriched.inboundEmail = "";
+    enriched.members = [];
+  }
+  if (!isPaid) {
+    enriched.subscriptionEmail = "";
+    enriched.password = "";
+    enriched.messages = [];
+  }
+  return enriched;
+}
+
+function visibleRoomMessages(db, roomId) {
+  return db.messages
+    .filter((message) => message.roomId === roomId)
+    .map(publicMessage)
+    .filter(Boolean);
+}
+
+function publicMessage(message) {
+  if (!message) return null;
+  if (message.otp) {
+    return {
+      id: message.id,
+      roomId: message.roomId,
+      type: "otp",
+      subject: "ChatGPT OTP",
+      body: "",
+      otp: message.otp,
+      otpExpiresAt: message.otpExpiresAt || null,
+      createdAt: message.createdAt
+    };
+  }
+  if (["admin", "payment_request"].includes(message.type)) {
+    return {
+      id: message.id,
+      roomId: message.roomId,
+      type: message.type,
+      subject: message.subject || "New message",
+      body: message.body || "",
+      createdAt: message.createdAt
+    };
+  }
+  return null;
 }
 
 function nextPaidUntil() {
@@ -555,8 +625,22 @@ function clampOtpTtl(value) {
   return Math.min(60, Math.max(1, Math.round(minutes)));
 }
 
+function safeDateValue(value) {
+  const text = String(value || "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : "";
+}
+
+function canReadRoom(db, roomId, user) {
+  const membership = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+  return user.role === "admin" || ["owner", "admin"].includes(membership?.role) || Boolean(membership?.paidUntil);
+}
+
 function roomEvents(req, res, path) {
   const roomId = path.split("/")[3];
+  const db = readDb();
+  const user = currentUser(db, req);
+  if (!user) return sendJson(res, 401, { error: "unauthorized" });
+  if (!canReadRoom(db, roomId, user)) return sendJson(res, 403, { error: "forbidden" });
   res.writeHead(200, {
     "Content-Type": "text/event-stream; charset=utf-8",
     "Cache-Control": "no-cache, no-transform",
