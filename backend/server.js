@@ -1,7 +1,7 @@
 const fs = require("fs");
 const pathModule = require("path");
 const http = require("http");
-const { readDb, mutate, makeId, roomCode } = require("./lib/store");
+const { readDb, mutate, makeId, roomCode, storageInfo } = require("./lib/store");
 const { sendJson, notFound, badRequest, readBody, routePath, routeQuery } = require("./lib/http");
 const { extractOtp, otpExpiresAt } = require("./lib/otp");
 const gmail = require("./lib/gmail");
@@ -20,7 +20,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "OPTIONS") return sendJson(res, 200, {});
     const path = routePath(req);
 
-    if (req.method === "GET" && path === "/api/health") return sendJson(res, 200, { ok: true });
+    if (req.method === "GET" && path === "/api/health") return sendJson(res, 200, { ok: true, storage: storageInfo() });
     if (req.method === "GET" && path.match(/^\/api\/rooms\/[^/]+\/events$/)) return roomEvents(req, res, path);
     if (req.method === "POST" && path === "/api/auth/register") return await register(req, res);
     if (req.method === "POST" && path === "/api/auth/login") return await login(req, res);
@@ -47,6 +47,11 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`SubPay backend listening on http://localhost:${PORT}`);
+  const storage = storageInfo();
+  console.log(`SubPay data path: ${storage.dataPath}`);
+  if (!storage.persistentPathConfigured) {
+    console.warn("DATA_PATH is not configured. Railway redeploys can reset users and rooms without a mounted volume.");
+  }
   startGmailPoller();
 });
 

@@ -68,33 +68,37 @@
   <div class="modal-overlay" id="modal-create-room">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <h2 class="modal-title">إنشاء روم جديد</h2>
+      <h2 class="modal-title">&#1573;&#1606;&#1588;&#1575;&#1569; &#1585;&#1608;&#1605; &#1580;&#1583;&#1610;&#1583;</h2>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">اسم الروم</label>
+        <label class="form-label">&#1575;&#1587;&#1605; &#1575;&#1604;&#1585;&#1608;&#1605;</label>
         <input type="text" class="form-input" id="create-room-name" placeholder="ChatGPT Team">
       </div>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">إيميل الاشتراك</label>
+        <label class="form-label">&#1573;&#1610;&#1605;&#1610;&#1604; &#1575;&#1604;&#1575;&#1588;&#1578;&#1585;&#1575;&#1603;</label>
         <input type="email" class="form-input ltr" id="create-room-sub-email" placeholder="account@example.com">
       </div>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">باسورد الاشتراك</label>
+        <label class="form-label">&#1576;&#1575;&#1587;&#1608;&#1585;&#1583; &#1575;&#1604;&#1575;&#1588;&#1578;&#1585;&#1575;&#1603;</label>
         <input type="text" class="form-input ltr" id="create-room-sub-password" placeholder="Subscription password">
       </div>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">السعر الشهري</label>
+        <label class="form-label">&#1575;&#1604;&#1587;&#1593;&#1585; &#1575;&#1604;&#1588;&#1607;&#1585;&#1610;</label>
         <input type="number" class="form-input ltr" id="create-room-price" placeholder="50" min="0">
       </div>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">Gmail الذي يستقبل OTP</label>
+        <label class="form-label">&#1605;&#1583;&#1577; &#1589;&#1604;&#1575;&#1581;&#1610;&#1577; OTP &#1576;&#1575;&#1604;&#1583;&#1602;&#1575;&#1574;&#1602;</label>
+        <input type="number" class="form-input ltr" id="create-room-otp-ttl" placeholder="5" min="1" max="60" value="5">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Gmail &#1575;&#1604;&#1584;&#1610; &#1610;&#1587;&#1578;&#1602;&#1576;&#1604; OTP</label>
         <input type="email" class="form-input ltr" id="create-room-imap-email" placeholder="subpay.otp@gmail.com">
       </div>
       <div class="form-group" style="margin-bottom:16px">
         <label class="form-label">Gmail App Password</label>
         <input type="password" class="form-input ltr" id="create-room-imap-password" placeholder="xxxx xxxx xxxx xxxx">
       </div>
-      <button class="btn btn-primary" id="btn-create-room-confirm">إنشاء وربط OTP</button>
-      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-create-room')">إلغاء</button>
+      <button class="btn btn-primary" id="btn-create-room-confirm">&#1573;&#1606;&#1588;&#1575;&#1569; &#1608;&#1585;&#1576;&#1591; OTP</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-create-room')">&#1573;&#1604;&#1594;&#1575;&#1569;</button>
     </div>
   </div>
 
@@ -102,17 +106,17 @@
   <div class="modal-overlay" id="modal-admin-message">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <h2 class="modal-title">رسالة للمشتركين</h2>
+      <h2 class="modal-title">&#1585;&#1587;&#1575;&#1604;&#1577; &#1604;&#1604;&#1605;&#1588;&#1578;&#1585;&#1603;&#1610;&#1606;</h2>
       <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label">عنوان الرسالة</label>
-        <input type="text" class="form-input" id="admin-message-subject" placeholder="تحديث بيانات الاشتراك">
+        <label class="form-label">&#1593;&#1606;&#1608;&#1575;&#1606; &#1575;&#1604;&#1585;&#1587;&#1575;&#1604;&#1577;</label>
+        <input type="text" class="form-input" id="admin-message-subject" placeholder="&#1578;&#1581;&#1583;&#1610;&#1579; &#1576;&#1610;&#1575;&#1606;&#1575;&#1578; &#1575;&#1604;&#1575;&#1588;&#1578;&#1585;&#1575;&#1603;">
       </div>
       <div class="form-group" style="margin-bottom:16px">
-        <label class="form-label">نص الرسالة</label>
-        <textarea class="form-input" id="admin-message-body" rows="4" placeholder="اكتب الرسالة التي ستظهر لكل أعضاء الروم"></textarea>
+        <label class="form-label">&#1606;&#1589; &#1575;&#1604;&#1585;&#1587;&#1575;&#1604;&#1577;</label>
+        <textarea class="form-input" id="admin-message-body" rows="4" placeholder="&#1575;&#1603;&#1578;&#1576; &#1575;&#1604;&#1585;&#1587;&#1575;&#1604;&#1577; &#1575;&#1604;&#1578;&#1610; &#1587;&#1578;&#1592;&#1607;&#1585; &#1604;&#1603;&#1604; &#1571;&#1593;&#1590;&#1575;&#1569; &#1575;&#1604;&#1585;&#1608;&#1605;"></textarea>
       </div>
-      <button class="btn btn-primary" id="btn-admin-message-confirm">إرسال الرسالة</button>
-      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-admin-message')">إلغاء</button>
+      <button class="btn btn-primary" id="btn-admin-message-confirm">&#1573;&#1585;&#1587;&#1575;&#1604; &#1575;&#1604;&#1585;&#1587;&#1575;&#1604;&#1577;</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-admin-message')">&#1573;&#1604;&#1594;&#1575;&#1569;</button>
     </div>
   </div>
 

@@ -1629,7 +1629,6 @@ function setupEventListeners() {
 // ===================================================
 function init() {
   registerServiceWorker();
-  fixAdminArabicText();
   renderFAQ(); // pre-render so FAQ screen is instant
   setupEventListeners();
   navigateTo('screen-splash');

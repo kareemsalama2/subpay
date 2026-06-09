@@ -73,6 +73,14 @@ function writeDb(db) {
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
 }
 
+function storageInfo() {
+  return {
+    dataPath: DB_PATH,
+    persistentPathConfigured: Boolean(process.env.DATA_PATH),
+    exists: fs.existsSync(DB_PATH)
+  };
+}
+
 function mutate(mutator) {
   const db = readDb();
   const result = mutator(db);
@@ -80,4 +88,4 @@ function mutate(mutator) {
   return result;
 }
 
-module.exports = { readDb, writeDb, mutate, makeId, roomCode };
+module.exports = { readDb, writeDb, mutate, makeId, roomCode, storageInfo };
