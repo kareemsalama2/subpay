@@ -47,6 +47,56 @@ function repairVisibleArabic(root = document.body) {
   });
 }
 
+function setEnglishStaticText() {
+  document.documentElement.lang = 'en';
+  document.documentElement.dir = 'ltr';
+  const textBySelector = {
+    '.auth-title': 'Welcome back',
+    '.auth-subtitle': 'Sign in to manage your shared subscriptions',
+    '#btn-login': 'Sign in',
+    '#btn-register': 'Create account',
+    '#btn-open-create-room': 'Create new room',
+    '#btn-create-room-confirm': 'Create and connect OTP',
+    '#btn-admin-message-confirm': 'Send message',
+    '#modal-create-room .modal-title': 'Create new room',
+    '#modal-admin-message .modal-title': 'Message members',
+    '#room-tab-data .warning-banner': 'Sensitive room data access may be logged for security.',
+  };
+  Object.entries(textBySelector).forEach(([selector, text]) => {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    if (el.querySelector('svg')) {
+      const textNode = [...el.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
+      if (textNode) textNode.nodeValue = ` ${text}`;
+    } else {
+      el.textContent = text;
+    }
+  });
+  const labels = [
+    ['login-email', 'Email'],
+    ['login-password', 'Password'],
+    ['reg-name', 'Full name'],
+    ['reg-phone', 'Phone number'],
+    ['reg-email', 'Email'],
+    ['reg-password', 'Password'],
+    ['create-room-name', 'Room name'],
+    ['create-room-image', 'Room image'],
+    ['create-room-sub-email', 'Subscription email'],
+    ['create-room-sub-password', 'Subscription password'],
+    ['create-room-price', 'Monthly price'],
+    ['create-room-otp-ttl', 'OTP expiry in minutes'],
+    ['create-room-imap-email', 'Gmail inbox for OTP'],
+    ['create-room-imap-password', 'Gmail App Password'],
+    ['admin-message-subject', 'Message title'],
+    ['admin-message-body', 'Message body'],
+  ];
+  labels.forEach(([id, labelText]) => {
+    const input = document.getElementById(id);
+    const label = input?.closest('.form-group')?.querySelector('.form-label');
+    if (label) label.textContent = labelText;
+  });
+}
+
 // ========== Demo Data ==========
 const DEMO_USER = {
   id: 'u1',
@@ -64,7 +114,7 @@ const DEMO_ROOMS = [
     iconClass: 'chatgpt',
     service: 'ChatGPT Plus',
     price: 49,
-    currency: 'Ø¬Ù†ÙŠÙ‡',
+    currency: 'EGP',
     members: 5,
     maxMembers: 5,
     isPaid: true,
@@ -215,22 +265,22 @@ function normalizeBackendRoom(room) {
     username: room.subscriptionEmail || room.inboundEmail || '',
     password: room.password || '',
     otpTtlMinutes: room.otpTtlMinutes || 5,
-    renewDate: room.paidUntil || 'ØºÙŠØ± Ù…Ø­Ø¯Ø¯',
+    renewDate: room.paidUntil || 'Not set',
     latestOtp: latestOtpMessage?.otp || null,
     latestOtpMessageId: latestOtpMessage?.id || null,
     latestOtpCreatedAt: latestOtpMessage?.createdAt || null,
     latestOtpExpiresAt: latestOtpMessage?.otpExpiresAt || null,
     notifications: messages.slice(0, 10).map((message) => ({
       id: message.id,
-      title: message.otp ? `OTP Ø¬Ø¯ÙŠØ¯ â€” ${room.name}` : (message.subject || 'Ø±Ø³Ø§Ù„Ø© ÙˆØ§Ø±Ø¯Ø©'),
-      body: message.otp ? `ÙƒÙˆØ¯ Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„Ø¬Ø¯ÙŠØ¯: ${message.otp}` : (message.body || ''),
+      title: message.otp ? `New OTP - ${room.name}` : (message.subject || 'New message'),
+      body: message.otp ? `Verification code: ${message.otp}` : (message.body || ''),
       time: formatRelativeTime(message.createdAt),
       type: message.otp ? 'info' : 'success',
       unread: false,
     })),
     membersList: members.map((member) => ({
       id: member.id,
-      name: member.user?.name || 'Ø¹Ø¶Ùˆ',
+      name: member.user?.name || 'Member',
       email: member.user?.email || '',
       role: member.role,
       paid: Boolean(member.paidUntil),
@@ -243,11 +293,11 @@ function normalizeBackendRoom(room) {
 function formatRelativeTime(ts) {
   const diff = Math.max(0, Date.now() - Number(ts || Date.now()));
   const min = Math.floor(diff / 60000);
-  if (min < 1) return 'Ø§Ù„Ø¢Ù†';
-  if (min < 60) return `Ù…Ù†Ø° ${min} Ø¯Ù‚ÙŠÙ‚Ø©`;
+  if (min < 1) return 'now';
+  if (min < 60) return `${min} min ago`;
   const hours = Math.floor(min / 60);
-  if (hours < 24) return `Ù…Ù†Ø° ${hours} Ø³Ø§Ø¹Ø©`;
-  return `Ù…Ù†Ø° ${Math.floor(hours / 24)} ÙŠÙˆÙ…`;
+  if (hours < 24) return `${hours} hr ago`;
+  return `${Math.floor(hours / 24)} days ago`;
 }
 
 function formatExactTime(ts) {
@@ -256,10 +306,10 @@ function formatExactTime(ts) {
 }
 
 function formatOtpStatus(message) {
-  if (!message?.otp) return 'Ø¨Ø§Ù†ØªØ¸Ø§Ø± OTP';
+  if (!message?.otp) return 'Waiting for OTP';
   const arrived = formatExactTime(message.createdAt);
   const expired = message.otpExpiresAt && Date.now() > Number(message.otpExpiresAt);
-  return `${expired ? 'Ø§Ù†ØªÙ‡Ù‰' : 'ÙˆØµÙ„'}${arrived ? ` Ø§Ù„Ø³Ø§Ø¹Ø© ${arrived}` : ''}`;
+  return `${expired ? 'Expired' : 'Arrived'}${arrived ? ` at ${arrived}` : ''}`;
 }
 
 async function syncBackendRooms() {
@@ -528,12 +578,12 @@ async function handleLogin() {
   clearFieldError('login-password');
 
   if (!email) {
-    showFieldError('login-email', 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ Ù…Ø·Ù„ÙˆØ¨'); valid = false;
+    showFieldError('login-email', 'Email is required'); valid = false;
   } else if (!isValidEmail(email)) {
-    showFieldError('login-email', 'Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ­ÙŠØ­'); valid = false;
+    showFieldError('login-email', 'Enter a valid email'); valid = false;
   }
   if (!pass) {
-    showFieldError('login-password', 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ù…Ø·Ù„ÙˆØ¨Ø©'); valid = false;
+    showFieldError('login-password', 'Password is required'); valid = false;
   }
   if (!valid) return;
 
@@ -544,15 +594,15 @@ async function handleLogin() {
     const backendSession = await loginWithBackend(email, pass, DEMO_USER.name);
     setButtonLoading(btn, false);
     loginSuccess(backendSession.user, backendSession.rooms, []);
-    showToast('Ø£Ù‡Ù„Ø§Ù‹ Ø¨Ùƒ ÙÙŠ SubPay âœ…', 'success');
+    showToast('Welcome to SubPay', 'success');
   } catch (error) {
     setButtonLoading(btn, false);
-    showToast('Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¯Ø®ÙˆÙ„ ØºÙŠØ± ØµØ­ÙŠØ­Ø© Ø£Ùˆ Ø§Ù„Ø³ÙŠØ±ÙØ± ØºÙŠØ± Ù…ØªØ§Ø­', 'error');
+    showToast('Invalid login details or server is unavailable', 'error');
   }
 }
 
 function handleGoogleLogin() {
-  showToast('تسجيل الدخول بجوجل غير مفعل حالياً. استخدم البريد وكلمة المرور.', 'warning', 5000);
+  showToast('Google sign-in is not enabled yet. Use email and password.', 'warning', 5000);
 }
 
 function loginSuccess(user, rooms, notifs) {
@@ -576,13 +626,13 @@ async function handleRegister() {
   const pass  = document.getElementById('reg-password').value.trim();
 
   if (!name || !phone || !email || !pass) {
-    showToast('ÙŠØ±Ø¬Ù‰ ØªØ¹Ø¨Ø¦Ø© Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø­Ù‚ÙˆÙ„', 'error'); return;
+    showToast('Please fill in all fields', 'error'); return;
   }
   if (!isValidEmail(email)) {
-    showToast('Ø¨Ø±ÙŠØ¯ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ ØºÙŠØ± ØµØ­ÙŠØ­', 'error'); return;
+    showToast('Enter a valid email', 'error'); return;
   }
   if (pass.length < 6) {
-    showToast('ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± ÙŠØ¬Ø¨ Ø£Ù† ØªÙƒÙˆÙ† 6 Ø£Ø­Ø±Ù Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„', 'error'); return;
+    showToast('Password must be at least 6 characters', 'error'); return;
   }
 
   const btn = document.getElementById('btn-register');
@@ -592,10 +642,10 @@ async function handleRegister() {
     const session = await registerWithBackend({ name, phone, email, password: pass });
     setButtonLoading(btn, false);
     loginSuccess(session.user, session.rooms, []);
-    showToast('ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨Ùƒ Ø¨Ù†Ø¬Ø§Ø­ ðŸŽ‰', 'success');
+    showToast('Account created successfully', 'success');
   } catch (error) {
     setButtonLoading(btn, false);
-    showToast(error.message || 'ÙØ´Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø­Ø³Ø§Ø¨', 'error');
+    showToast(error.message || 'Failed to create account', 'error');
   }
 }
 
@@ -720,13 +770,13 @@ function renderRoomsList() {
             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
           </svg>
         </div>
-        <div class="empty-title">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø±ÙˆÙ… Ø¨Ø¹Ø¯</div>
-        <div class="empty-subtitle">Ø§Ù†Ø¶Ù… Ù„Ø±ÙˆÙ… Ø¨ÙƒÙˆØ¯ Ø¯Ø¹ÙˆØ© Ù…Ù† Ø§Ù„Ø£Ø¯Ù…Ù†</div>
+        <div class="empty-title">No rooms yet</div>
+        <div class="empty-subtitle">Join a room using the invite code from the admin</div>
         <button class="btn btn-primary" style="max-width:200px;margin-top:8px" onclick="openModal('modal-join')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Ø§Ù†Ø¶Ù… Ù„Ø±ÙˆÙ…
+          Join room
         </button>
       </div>`;
     return;
@@ -737,13 +787,13 @@ function renderRoomsList() {
       <div class="room-icon ${room.iconClass}">${room.icon}</div>
       <div class="room-info">
         <div class="room-name">${room.name}</div>
-        <div class="room-meta">${room.members} Ø£Ø¹Ø¶Ø§Ø¡ Â· ÙŠÙØ¬Ø¯Ø¯ ${room.renewDate}</div>
+        <div class="room-meta">${room.members} members · renews ${room.renewDate}</div>
         <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
           ${room.isPaid
-            ? '<span class="badge badge-success"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Ù…Ø¯ÙÙˆØ¹</span>'
-            : '<span class="badge badge-danger">âš  ØºÙŠØ± Ù…Ø¯ÙÙˆØ¹</span>'
+            ? '<span class="badge badge-success"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Paid</span>'
+            : '<span class="badge badge-danger">Unpaid</span>'
           }
-          <span class="badge badge-primary">${room.price} ${room.currency}/Ø´Ù‡Ø±</span>
+          <span class="badge badge-primary">${room.price} ${room.currency}/month</span>
           ${room.isAdmin ? '<span class="badge badge-warning">Admin</span>' : ''}
         </div>
       </div>
@@ -765,10 +815,10 @@ function openRoom(roomId) {
   if (!room.isPaid) {
     // Locked screen
     document.getElementById('unpaid-room-name').textContent = room.name;
-    document.getElementById('locked-reason').textContent    =
-      'Ù„Ù… ÙŠØªÙ… Ø³Ø¯Ø§Ø¯ Ø§Ø´ØªØ±Ø§Ùƒ ' + room.name + ' Ù„Ù„Ø´Ù‡Ø± Ø§Ù„Ø¬Ø§Ø±ÙŠ. Ø§Ø¯ÙØ¹ Ù„Ù„ÙˆØµÙˆÙ„ Ù„Ø¬Ù…ÙŠØ¹ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±ÙˆÙ….';
+    document.getElementById('locked-reason').textContent =
+      `${room.name} has not been paid for this month. Pay to access the room data.`;
     document.getElementById('locked-amount').innerHTML =
-      room.price + ' <span>' + room.currency + '/Ø´Ù‡Ø±</span>';
+      room.price + ' <span>' + room.currency + '/month</span>';
     navigateTo('screen-unpaid');
     return;
   }
@@ -814,7 +864,7 @@ function renderRoomHeader(room) {
   }
   document.getElementById('room-detail-name').textContent = room.name;
   document.getElementById('room-detail-meta').textContent =
-    `${room.members} أعضاء · ${room.isAdmin ? `${room.membersList.filter((m) => m.paid).length} مدفوع` : (room.isPaid ? 'مدفوع' : 'مطلوب الدفع')}`;
+    `${room.members} members · ${room.isAdmin ? `${room.membersList.filter((m) => m.paid).length} paid` : (room.isPaid ? 'Paid' : 'Payment required')}`;
 }
 
 function renderRoomInfoCard(room) {
@@ -823,48 +873,48 @@ function renderRoomInfoCard(room) {
   card.innerHTML = `
     ${room.isAdmin ? `
       <div class="info-row">
-        <span class="info-key">رسالة للمشتركين</span>
+        <span class="info-key">Message members</span>
         <span class="info-val">
-          <button class="toggle-vis" onclick="openModal('modal-admin-message')" title="إرسال رسالة">اكتب رسالة</button>
+          <button class="toggle-vis" onclick="openModal('modal-admin-message')" title="Send message">Write message</button>
         </span>
       </div>
       <div class="info-row">
-        <span class="info-key">مدة صلاحية OTP</span>
+        <span class="info-key">OTP expiry</span>
         <span class="info-val" style="gap:8px">
           <input id="room-otp-ttl-input" class="form-input ltr" type="number" min="1" max="60" value="${room.otpTtlMinutes || 5}" style="width:82px;padding:8px 10px">
-          <span>دقيقة</span>
-          <button class="toggle-vis" onclick="saveRoomOtpTtl()" title="حفظ مدة OTP">حفظ</button>
+          <span>min</span>
+          <button class="toggle-vis" onclick="saveRoomOtpTtl()" title="Save OTP expiry">Save</button>
         </span>
       </div>
     ` : ''}
     <div class="info-row">
-      <span class="info-key">كود الدعوة</span>
+      <span class="info-key">Invite code</span>
       <span class="info-val" style="gap:8px">
         <span class="mono" style="direction:ltr;text-align:left">${room.code || '--'}</span>
-        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="نسخ كود الدعوة">نسخ</button>
+        <button class="toggle-vis" onclick="copyRoomInviteCode()" title="Copy invite code">Copy</button>
       </span>
     </div>
     <div class="info-row">
-      <span class="info-key">Ø§Ù„Ø®Ø¯Ù…Ø©</span>
+      <span class="info-key">Service</span>
       <span class="info-val">${room.service}</span>
     </div>
     <div class="info-row">
-      <span class="info-key">Ø§Ù„Ø³Ø¹Ø± Ø§Ù„Ø´Ù‡Ø±ÙŠ</span>
+      <span class="info-key">Monthly price</span>
       <span class="info-val">${room.price} ${room.currency}</span>
     </div>
     <div class="info-row">
-      <span class="info-key">ØªØ§Ø±ÙŠØ® Ø§Ù„ØªØ¬Ø¯ÙŠØ¯</span>
+      <span class="info-key">Renewal date</span>
       <span class="info-val">${room.renewDate}</span>
     </div>
     <div class="info-row">
-      <span class="info-key">Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…</span>
+      <span class="info-key">Username</span>
       <span class="info-val mono" style="direction:ltr;text-align:left">${room.username}</span>
     </div>
     <div class="info-row" style="border-bottom:none">
-      <span class="info-key">ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±</span>
+      <span class="info-key">Password</span>
       <span class="info-val" style="gap:8px">
         <span class="mono blurred" id="room-pass-val" style="direction:ltr;letter-spacing:2px">${room.password}</span>
-        <button class="toggle-vis" id="room-pass-toggle" onclick="toggleRoomPassword()" title="Ø¥Ø¸Ù‡Ø§Ø± / Ø¥Ø®ÙØ§Ø¡">
+        <button class="toggle-vis" id="room-pass-toggle" onclick="toggleRoomPassword()" title="Show / hide">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
@@ -911,13 +961,13 @@ async function saveRoomOtpTtl() {
 async function copyRoomInviteCode() {
   const code = state.currentRoom?.code;
   if (!code) {
-    showToast('Ù„Ø§ ÙŠÙˆØ¬Ø¯ ÙƒÙˆØ¯ Ø¯Ø¹ÙˆØ© Ù„Ù„Ø±ÙˆÙ…', 'error');
+    showToast('No invite code found for this room', 'error');
     return;
   }
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(code);
-      showToast(`ÙƒÙˆØ¯ Ø§Ù„Ø±ÙˆÙ…: ${code}`, 'info', 9000);
+      showToast(`Room code: ${code}`, 'info', 9000);
     } else {
       const input = document.createElement('textarea');
       input.value = code;
@@ -928,9 +978,9 @@ async function copyRoomInviteCode() {
       document.execCommand('copy');
       input.remove();
     }
-    showToast('ØªÙ… Ù†Ø³Ø® ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©', 'success');
+    showToast('Invite code copied', 'success');
   } catch (error) {
-    showToast('Ø§Ù†Ø³Ø® Ø§Ù„ÙƒÙˆØ¯ ÙŠØ¯ÙˆÙŠØ§Ù‹: ' + code, 'info', 6000);
+    showToast('Copy this code manually: ' + code, 'info', 6000);
   }
 }
 
@@ -946,7 +996,7 @@ function startOTPTimer() {
     const timeEl = document.getElementById('otp-time-left');
     const barEl  = document.getElementById('otp-bar');
     if (codeEl) codeEl.textContent = state.currentRoom.latestOtp || '--';
-    if (timeEl) timeEl.textContent = state.currentRoom.latestOtp ? 'Ø¢Ø®Ø± ÙƒÙˆØ¯ Ù…Ø­ÙÙˆØ¸' : 'Ø¨Ø§Ù†ØªØ¸Ø§Ø± OTP';
+    if (timeEl) timeEl.textContent = state.currentRoom.latestOtp ? 'Last saved code' : 'Waiting for OTP';
     if (barEl) {
       barEl.style.width = state.currentRoom.latestOtp ? '100%' : '12%';
       barEl.style.background = state.currentRoom.latestOtp ? 'var(--success)' : 'var(--warning)';
@@ -990,7 +1040,7 @@ function renderRoomNotifications(room) {
   const list = document.getElementById('room-notifs-list');
   if (!list) return;
   if (!room.notifications || room.notifications.length === 0) {
-    list.innerHTML = emptyState('Ù„Ø§ ØªÙˆØ¬Ø¯ Ø¥Ø´Ø¹Ø§Ø±Ø§Øª Ù„Ù‡Ø°Ù‡ Ø§Ù„Ø±ÙˆÙ…', 'bell');
+    list.innerHTML = emptyState('No notifications for this room', 'bell');
     return;
   }
   list.innerHTML = room.notifications.map(n => notifItemHTML(n)).join('');
@@ -1313,12 +1363,12 @@ async function handleJoinRoom() {
 
   if (!code) {
     if (errorEl) errorEl.style.display = 'flex';
-    if (errTxt)  errTxt.textContent    = 'ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©';
+    if (errTxt)  errTxt.textContent    = 'Enter the invite code';
     return;
   }
   if (code.length < 4) {
     if (errorEl) errorEl.style.display = 'flex';
-    if (errTxt)  errTxt.textContent    = 'Ø§Ù„ÙƒÙˆØ¯ Ù‚ØµÙŠØ± Ø¬Ø¯Ø§Ù‹';
+    if (errTxt)  errTxt.textContent    = 'Code is too short';
     return;
   }
 
@@ -1334,10 +1384,10 @@ async function handleJoinRoom() {
     renderRoomsList();
     closeModal('modal-join');
     if (input) input.value = '';
-    showToast('ØªÙ… Ø§Ù„Ø§Ù†Ø¶Ù…Ø§Ù… Ù„Ù„Ø±ÙˆÙ… Ø¨Ù†Ø¬Ø§Ø­ ðŸŽ‰', 'success');
+    showToast('Joined room successfully', 'success');
   } catch (error) {
     if (errorEl) errorEl.style.display = 'flex';
-    if (errTxt) errTxt.textContent = 'ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ© ØºÙŠØ± ØµØ­ÙŠØ­ Ø£Ùˆ ÙŠØ¬Ø¨ ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹';
+    if (errTxt) errTxt.textContent = 'Invalid invite code or login is required';
   } finally {
     setButtonLoading(btn, false);
   }
@@ -1345,7 +1395,7 @@ async function handleJoinRoom() {
 
 async function handleCreateRoom() {
   if (state.currentUser?.role !== 'admin') {
-    showToast('Ø­Ø³Ø§Ø¨ Ø£Ø¯Ù…Ù† Ù…Ø·Ù„ÙˆØ¨ Ù„Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…Ø§Øª', 'error');
+    showToast('Admin account is required to create rooms', 'error');
     return;
   }
 
@@ -1359,11 +1409,11 @@ async function handleCreateRoom() {
   const imapAppPassword = document.getElementById('create-room-imap-password')?.value.trim();
 
   if (!name || !subscriptionEmail || !password || !imapEmail || !imapAppPassword) {
-    showToast('Ø§Ù…Ù„Ø£ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø±ÙˆÙ… ÙˆØ§Ù„Ù…ÙŠÙ„ Ø¨Ø§Ù„ÙƒØ§Ù…Ù„', 'error');
+    showToast('Fill in all room and email details', 'error');
     return;
   }
   if (!isValidEmail(subscriptionEmail) || !isValidEmail(imapEmail)) {
-    showToast('ØªØ£ÙƒØ¯ Ù…Ù† ØµØ­Ø© Ø§Ù„Ø¥ÙŠÙ…ÙŠÙ„Ø§Øª', 'error');
+    showToast('Check that the emails are valid', 'error');
     return;
   }
 
@@ -1396,9 +1446,9 @@ async function handleCreateRoom() {
       });
     const ttlInput = document.getElementById('create-room-otp-ttl');
     if (ttlInput) ttlInput.value = '5';
-    showToast(`ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…. ÙƒÙˆØ¯ Ø§Ù„Ø¯Ø¹ÙˆØ©: ${room.code}`, 'success', 6000);
+    showToast(`Room created. Invite code: ${room.code}`, 'success', 6000);
   } catch (error) {
-    showToast(error.message || 'ÙØ´Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø±ÙˆÙ…', 'error');
+    showToast(error.message || 'Failed to create room', 'error');
   } finally {
     setButtonLoading(btn, false);
   }
@@ -1746,6 +1796,7 @@ function setupEventListeners() {
 // ===================================================
 function init() {
   registerServiceWorker();
+  setEnglishStaticText();
   repairVisibleArabic(document.body);
   renderFAQ(); // pre-render so FAQ screen is instant
   setupEventListeners();
