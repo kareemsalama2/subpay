@@ -20,6 +20,33 @@ const state = {
 
 const API_BASE = `${location.origin}/api`;
 
+function decodeMojibake(value) {
+  const text = String(value ?? '');
+  if (!/[ØÙÃÂâðï]/.test(text) || !window.TextDecoder) return text;
+  try {
+    const bytes = new Uint8Array([...text].map((char) => char.charCodeAt(0) & 255));
+    return new TextDecoder('utf-8').decode(bytes).replace(/\uFFFD/g, '').trim() || text;
+  } catch (_) {
+    return text;
+  }
+}
+
+function repairVisibleArabic(root = document.body) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((node) => {
+    const fixed = decodeMojibake(node.nodeValue);
+    if (fixed !== node.nodeValue) node.nodeValue = fixed;
+  });
+  root.querySelectorAll?.('[placeholder], [title]').forEach((el) => {
+    ['placeholder', 'title'].forEach((attr) => {
+      if (el.hasAttribute(attr)) el.setAttribute(attr, decodeMojibake(el.getAttribute(attr)));
+    });
+  });
+}
+
 // ========== Demo Data ==========
 const DEMO_USER = {
   id: 'u1',
@@ -480,6 +507,7 @@ function navigateTo(screenId) {
   if (sb) sb.scrollTop = 0;
   const sa = target.querySelector('.scroll-area');
   if (sa) sa.scrollTop = 0;
+  repairVisibleArabic(target);
 }
 
 function setActiveNav(navKey) {
@@ -524,7 +552,7 @@ async function handleLogin() {
 }
 
 function handleGoogleLogin() {
-  showToast('ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„ Ø¨Ø¬ÙˆØ¬Ù„ ØºÙŠØ± Ù…ÙØ¹Ù„ Ø­Ø§Ù„ÙŠØ§Ù‹. Ø§Ø³ØªØ®Ø¯Ù… Ø§Ù„Ø¨Ø±ÙŠØ¯ ÙˆÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±.', 'warning', 5000);
+  showToast('تسجيل الدخول بجوجل غير مفعل حالياً. استخدم البريد وكلمة المرور.', 'warning', 5000);
 }
 
 function loginSuccess(user, rooms, notifs) {
@@ -1400,6 +1428,7 @@ document.addEventListener('click', e => {
 // Toast
 // ===================================================
 function showToast(msg, type = 'info', duration = 3000) {
+  msg = decodeMojibake(msg);
   const container = document.getElementById('toast-container');
   if (!container) return;
 
@@ -1429,6 +1458,7 @@ function isValidEmail(email) {
 }
 
 function showFieldError(fieldId, message) {
+  message = decodeMojibake(message);
   const input   = document.getElementById(fieldId);
   const errDiv  = document.getElementById(fieldId + '-error');
   const errText = document.getElementById(fieldId + '-error-text');
@@ -1716,6 +1746,7 @@ function setupEventListeners() {
 // ===================================================
 function init() {
   registerServiceWorker();
+  repairVisibleArabic(document.body);
   renderFAQ(); // pre-render so FAQ screen is instant
   setupEventListeners();
   navigateTo('screen-splash');

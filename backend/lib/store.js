@@ -1,9 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 
+const DEFAULT_RAILWAY_DATA_PATH = "/data/db.json";
 const DB_PATH = process.env.DATA_PATH
   ? path.resolve(process.env.DATA_PATH)
-  : path.join(__dirname, "..", "data", "db.json");
+  : fs.existsSync("/data")
+    ? DEFAULT_RAILWAY_DATA_PATH
+    : path.join(__dirname, "..", "data", "db.json");
 const DATA_DIR = path.dirname(DB_PATH);
 
 function makeId(prefix = "id") {
@@ -74,10 +77,13 @@ function writeDb(db) {
 }
 
 function storageInfo() {
+  const db = fs.existsSync(DB_PATH) ? JSON.parse(fs.readFileSync(DB_PATH, "utf8").replace(/^\uFEFF/, "")) : initialDb();
   return {
     dataPath: DB_PATH,
-    persistentPathConfigured: Boolean(process.env.DATA_PATH),
-    exists: fs.existsSync(DB_PATH)
+    persistentPathConfigured: Boolean(process.env.DATA_PATH) || DB_PATH === DEFAULT_RAILWAY_DATA_PATH,
+    exists: fs.existsSync(DB_PATH),
+    users: Array.isArray(db.users) ? db.users.length : 0,
+    rooms: Array.isArray(db.rooms) ? db.rooms.length : 0
   };
 }
 
