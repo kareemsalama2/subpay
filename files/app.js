@@ -187,6 +187,8 @@ function normalizeBackendRoom(room) {
     password: room.password || '',
     renewDate: room.paidUntil || 'غير محدد',
     latestOtp: latestOtpMessage?.otp || null,
+    latestOtpMessageId: latestOtpMessage?.id || null,
+    latestOtpCreatedAt: latestOtpMessage?.createdAt || null,
     latestOtpExpiresAt: latestOtpMessage?.otpExpiresAt || null,
     notifications: messages.slice(0, 10).map((message) => ({
       id: message.id,
@@ -215,6 +217,18 @@ function formatRelativeTime(ts) {
   const hours = Math.floor(min / 60);
   if (hours < 24) return `منذ ${hours} ساعة`;
   return `منذ ${Math.floor(hours / 24)} يوم`;
+}
+
+function formatExactTime(ts) {
+  if (!ts) return '';
+  return new Date(Number(ts)).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatOtpStatus(message) {
+  if (!message?.otp) return 'بانتظار OTP';
+  const arrived = formatExactTime(message.createdAt);
+  const expired = message.otpExpiresAt && Date.now() > Number(message.otpExpiresAt);
+  return `${expired ? 'انتهى' : 'وصل'}${arrived ? ` الساعة ${arrived}` : ''}`;
 }
 
 async function syncBackendRooms() {
@@ -316,11 +330,74 @@ function applyOtpMessage(message) {
   showToast(`OTP جديد: ${message.otp}`, 'success');
 }
 
+function applyOtpMessageDedup(message) {
+  if (!message || !message.otp) return;
+  const isNewMessage = state.currentRoom?.latestOtpMessageId !== message.id;
+  const codeEl = document.getElementById('otp-code');
+  const timeEl = document.getElementById('otp-time-left');
+  const barEl = document.getElementById('otp-bar');
+  const remaining = Math.max(0, Number(message.otpExpiresAt || 0) - Date.now());
+
+  if (codeEl) codeEl.textContent = message.otp;
+  if (timeEl) timeEl.textContent = formatOtpStatus(message);
+  if (barEl) {
+    const percent = message.otpExpiresAt ? Math.max(0, Math.min(100, (remaining / (5 * 60 * 1000)) * 100)) : 100;
+    barEl.style.width = `${percent}%`;
+    barEl.style.background = remaining || !message.otpExpiresAt ? 'var(--success)' : 'var(--danger)';
+  }
+
+  if (state.currentRoom) {
+    state.currentRoom.latestOtp = message.otp;
+    state.currentRoom.latestOtpMessageId = message.id;
+    state.currentRoom.latestOtpCreatedAt = message.createdAt;
+    state.currentRoom.latestOtpExpiresAt = message.otpExpiresAt;
+    if (isNewMessage) {
+      state.currentRoom.notifications = [
+        {
+          id: message.id,
+          title: `OTP جديد — ${state.currentRoom.name}`,
+          body: `كود التحقق الجديد: ${message.otp} (${formatOtpStatus(message)})`,
+          time: formatRelativeTime(message.createdAt),
+          type: 'info',
+          unread: true,
+        },
+        ...(state.currentRoom.notifications || []).filter((item) => item.id !== message.id),
+      ];
+      renderRoomNotifications(state.currentRoom);
+    }
+  }
+  if (isNewMessage) showToast(`OTP جديد: ${message.otp}`, 'success');
+}
+
+function applyRoomMessage(message) {
+  if (!message) return;
+  if (message.otp) {
+    applyOtpMessageDedup(message);
+    return;
+  }
+  if (!state.currentRoom || state.currentRoom.id !== message.roomId) return;
+  const exists = (state.currentRoom.notifications || []).some((item) => item.id === message.id);
+  if (exists) return;
+  state.currentRoom.notifications = [
+    {
+      id: message.id,
+      title: message.subject || 'رسالة جديدة',
+      body: message.body || '',
+      time: formatRelativeTime(message.createdAt),
+      type: message.type === 'admin' ? 'success' : 'info',
+      unread: true,
+    },
+    ...(state.currentRoom.notifications || []),
+  ];
+  renderRoomNotifications(state.currentRoom);
+  showToast(message.subject || 'رسالة جديدة', 'info');
+}
+
 async function loadLatestBackendOtp(room) {
   try {
     const data = await apiFetch(`/rooms/${room.id}/messages`);
     const latest = (data.messages || []).find((message) => message.otp);
-    if (latest) applyOtpMessage(latest);
+    if (latest) applyOtpMessageDedup(latest);
   } catch (error) {
     console.warn('Latest OTP load failed:', error.message);
   }
@@ -332,7 +409,7 @@ async function pollRoomOtpNow(room) {
     const data = await apiFetch(`/rooms/${room.id}/imap/poll`, { method: 'POST' });
     const latest = (data.created || []).find((message) => message.otp);
     if (latest) {
-      applyOtpMessage(latest);
+      applyOtpMessageDedup(latest);
       return;
     }
     await loadLatestBackendOtp(room);
@@ -350,7 +427,7 @@ function startRoomOtpPolling(room) {
       return;
     }
     pollRoomOtpNow(room);
-  }, 5000);
+  }, 60000);
 }
 
 function connectRoomOtpRealtime(room) {
@@ -362,7 +439,7 @@ function connectRoomOtpRealtime(room) {
   }
   state.otpEventSource = new EventSource(`${API_BASE}/rooms/${room.id}/events`);
   state.otpEventSource.addEventListener('message', (event) => {
-    applyOtpMessage(JSON.parse(event.data));
+    applyRoomMessage(JSON.parse(event.data));
   });
   state.otpEventSource.onerror = () => {
     const timeEl = document.getElementById('otp-time-left');
@@ -670,6 +747,10 @@ function openRoom(roomId) {
   const membersTabBtn = document.getElementById('tab-members-btn');
   if (membersTabBtn) {
     membersTabBtn.style.display = room.isAdmin ? 'block' : 'none';
+  }
+  const adminMessageActions = document.getElementById('room-admin-message-actions');
+  if (adminMessageActions) {
+    adminMessageActions.style.display = room.isAdmin ? 'block' : 'none';
   }
 
   // Reset to first tab
@@ -1252,10 +1333,99 @@ function emptyState(title, icon) {
     </div>`;
 }
 
+async function handleAddMember() {
+  const emailInput = document.getElementById('add-member-email');
+  const email = emailInput ? emailInput.value.trim() : '';
+  if (!email || !isValidEmail(email)) {
+    showToast('بريد إلكتروني غير صحيح', 'error');
+    return;
+  }
+  if (!state.currentRoom?.id) return;
+
+  const btn = document.getElementById('btn-add-member-confirm');
+  setButtonLoading(btn, true);
+  try {
+    const result = await apiFetch(`/rooms/${state.currentRoom.id}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    const room = normalizeBackendRoom(result.room);
+    state.currentRoom = room;
+    state.rooms = [room, ...state.rooms.filter((item) => item.id !== room.id)];
+    renderRoomsList();
+    renderRoomMembers(room);
+    closeModal('modal-add-member');
+    if (emailInput) emailInput.value = '';
+    if (result.inviteRequired) {
+      showToast(`العضو لم ينشئ حساباً بعد. ابعت له كود الروم: ${result.code}`, 'info', 8000);
+    } else {
+      showToast('تمت إضافة العضو للروم', 'success');
+    }
+  } catch (error) {
+    showToast(error.message || 'فشل إضافة العضو', 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+async function handleAdminMessage() {
+  if (!state.currentRoom?.id) return;
+  const subjectInput = document.getElementById('admin-message-subject');
+  const bodyInput = document.getElementById('admin-message-body');
+  const subject = subjectInput ? subjectInput.value.trim() : '';
+  const body = bodyInput ? bodyInput.value.trim() : '';
+  if (!subject || !body) {
+    showToast('اكتب عنوان ونص الرسالة', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-admin-message-confirm');
+  setButtonLoading(btn, true);
+  try {
+    const result = await apiFetch(`/rooms/${state.currentRoom.id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'admin', subject, body }),
+    });
+    const message = result.message;
+    state.currentRoom.notifications = [
+      {
+        id: message.id,
+        title: message.subject,
+        body: message.body,
+        time: formatRelativeTime(message.createdAt),
+        type: 'success',
+        unread: true,
+      },
+      ...(state.currentRoom.notifications || []).filter((item) => item.id !== message.id),
+    ];
+    renderRoomNotifications(state.currentRoom);
+    closeModal('modal-admin-message');
+    if (subjectInput) subjectInput.value = '';
+    if (bodyInput) bodyInput.value = '';
+    showToast('تم إرسال الرسالة للمشتركين', 'success');
+  } catch (error) {
+    showToast(error.message || 'فشل إرسال الرسالة', 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
 // ===================================================
 // Event Listeners (after DOM ready)
 // ===================================================
 function setupEventListeners() {
+  const addMemberServerBtn = document.getElementById('btn-add-member-confirm');
+  if (addMemberServerBtn) {
+    addMemberServerBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      handleAddMember();
+    }, true);
+  }
+
+  const adminMessageBtn = document.getElementById('btn-admin-message-confirm');
+  if (adminMessageBtn) adminMessageBtn.addEventListener('click', handleAdminMessage);
+
   // Join Room confirm
   const joinBtn = document.getElementById('btn-join-confirm');
   if (joinBtn) joinBtn.addEventListener('click', handleJoinRoom);

@@ -1,8 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const DATA_DIR = path.join(__dirname, "..", "data");
-const DB_PATH = path.join(DATA_DIR, "db.json");
+const DB_PATH = process.env.DATA_PATH
+  ? path.resolve(process.env.DATA_PATH)
+  : path.join(__dirname, "..", "data", "db.json");
+const DATA_DIR = path.dirname(DB_PATH);
 
 function makeId(prefix = "id") {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;

@@ -98,6 +98,24 @@
     </div>
   </div>
 
+  <!-- ===== MODAL: Admin Message ===== -->
+  <div class="modal-overlay" id="modal-admin-message">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="modal-title">رسالة للمشتركين</h2>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">عنوان الرسالة</label>
+        <input type="text" class="form-input" id="admin-message-subject" placeholder="تحديث بيانات الاشتراك">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">نص الرسالة</label>
+        <textarea class="form-input" id="admin-message-body" rows="4" placeholder="اكتب الرسالة التي ستظهر لكل أعضاء الروم"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btn-admin-message-confirm">إرسال الرسالة</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-admin-message')">إلغاء</button>
+    </div>
+  </div>
+
   <!-- ===== MODAL: Delete Account ===== -->
   <div class="modal-overlay" id="modal-delete-account">
     <div class="modal-sheet">
@@ -471,6 +489,12 @@
         <div class="info-card" id="room-info-card"></div>
       </div>
       <div class="tab-panel" id="room-tab-notifs">
+        <div id="room-admin-message-actions" style="display:none;margin-bottom:12px">
+          <button class="btn btn-outline" style="display:flex;align-items:center;gap:8px" onclick="openModal('modal-admin-message')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 01-4 4H7l-4 4V7a4 4 0 014-4h10a4 4 0 014 4z"/></svg>
+            رسالة للمشتركين
+          </button>
+        </div>
         <div id="room-notifs-list"></div>
       </div>
       <div class="tab-panel" id="room-tab-members">

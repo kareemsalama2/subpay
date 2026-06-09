@@ -28,6 +28,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && path === "/api/rooms") return listRooms(req, res);
     if (req.method === "POST" && path === "/api/rooms") return await createRoom(req, res);
     if (req.method === "POST" && path === "/api/rooms/join") return await joinRoom(req, res);
+    if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/members$/)) return await addRoomMember(req, res, path);
     if (req.method === "POST" && path.match(/^\/api\/rooms\/[^/]+\/messages$/)) return await addRoomMessage(req, res, path);
     if (req.method === "GET" && path.match(/^\/api\/rooms\/[^/]+\/messages$/)) return roomMessages(req, res, path);
     if (req.method === "GET" && path.match(/^\/api\/rooms\/[^/]+\/gmail\/auth-url$/)) return gmailAuthUrl(req, res, path);
@@ -245,12 +246,54 @@ async function joinRoom(req, res) {
   sendJson(res, 200, { room: result });
 }
 
+async function addRoomMember(req, res, path) {
+  const roomId = path.split("/")[3];
+  const body = await readBody(req);
+  const email = String(body.email || "").trim().toLowerCase();
+  if (!email) return badRequest(res, "email is required");
+
+  const result = mutate((db) => {
+    const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
+    const room = db.rooms.find((item) => item.id === roomId);
+    if (!room) return null;
+    const requester = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+    if (!requester || !["owner", "admin"].includes(requester.role) && user.role !== "admin") return { forbidden: true };
+
+    const invitedUser = db.users.find((item) => item.email.toLowerCase() === email);
+    if (!invitedUser) return { inviteRequired: true, code: room.code, room: enrichRoom(db, room, user.id) };
+
+    const exists = db.memberships.some((member) => member.roomId === roomId && member.userId === invitedUser.id);
+    if (!exists) {
+      db.memberships.push({
+        id: makeId("mem"),
+        roomId,
+        userId: invitedUser.id,
+        role: "member",
+        paidUntil: null,
+        createdAt: Date.now()
+      });
+    }
+    return { added: true, code: room.code, room: enrichRoom(db, room, user.id) };
+  });
+
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
+  if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
+  if (!result) return notFound(res);
+  sendJson(res, 200, result);
+}
+
 async function addRoomMessage(req, res, path) {
   const roomId = path.split("/")[3];
   const body = await readBody(req);
   const result = mutate((db) => {
+    const user = currentUser(db, req);
+    if (!user) return { unauthorized: true };
     const room = db.rooms.find((item) => item.id === roomId);
     if (!room) return null;
+    const membership = db.memberships.find((member) => member.roomId === roomId && member.userId === user.id);
+    if (!membership) return { forbidden: true };
+    if (body.type === "admin" && !["owner", "admin"].includes(membership.role) && user.role !== "admin") return { forbidden: true };
     const createdAt = Date.now();
     const text = `${body.subject || ""}\n${body.body || ""}`;
     const otp = extractOtp(text);
@@ -260,7 +303,7 @@ async function addRoomMessage(req, res, path) {
       type: body.type || "email",
       subject: body.subject || "رسالة واردة",
       body: body.body || "",
-      from: body.from || room.inboundEmail,
+      from: body.from || user.name || room.inboundEmail,
       sourceEmail: room.inboundEmail,
       otp,
       otpExpiresAt: otp ? otpExpiresAt(createdAt) : null,
@@ -269,6 +312,8 @@ async function addRoomMessage(req, res, path) {
     db.messages.unshift(message);
     return message;
   });
+  if (result?.unauthorized) return sendJson(res, 401, { error: "unauthorized" });
+  if (result?.forbidden) return sendJson(res, 403, { error: "forbidden" });
   if (!result) return notFound(res);
   notifyRoom(roomId, "message", result);
   sendJson(res, 201, { message: result });
@@ -354,27 +399,34 @@ async function pollRoomById(roomId) {
 }
 
 function startGmailPoller() {
-  const seconds = Number(process.env.IMAP_POLL_INTERVAL_SECONDS || process.env.GMAIL_POLL_INTERVAL_SECONDS || 5);
+  const seconds = Number(process.env.IMAP_POLL_INTERVAL_SECONDS || process.env.GMAIL_POLL_INTERVAL_SECONDS || 60);
+  let polling = false;
   setInterval(async () => {
+    if (polling) return;
+    polling = true;
     const db = readDb();
-    for (const account of db.gmailAccounts) {
-      try {
-        const created = await pollRoomById(account.roomId);
-        created.forEach((message) => notifyRoom(account.roomId, "message", message));
-      } catch (error) {
-        console.error(`Gmail poll failed for room ${account.roomId}:`, error.message);
+    try {
+      for (const account of db.gmailAccounts) {
+        try {
+          const created = await pollRoomById(account.roomId);
+          created.forEach((message) => notifyRoom(account.roomId, "message", message));
+        } catch (error) {
+          console.error(`Gmail poll failed for room ${account.roomId}:`, error.message);
+        }
       }
-    }
-    for (const account of db.imapAccounts || []) {
-      try {
-        if (!account.email || !account.appPassword) continue;
-        const created = await pollRoomImapById(account.roomId);
-        created.forEach((message) => notifyRoom(account.roomId, "message", message));
-      } catch (error) {
-        console.error(`IMAP poll failed for room ${account.roomId}:`, error.message);
+      for (const account of db.imapAccounts || []) {
+        try {
+          if (!account.email || !account.appPassword) continue;
+          const created = await pollRoomImapById(account.roomId);
+          created.forEach((message) => notifyRoom(account.roomId, "message", message));
+        } catch (error) {
+          console.error(`IMAP poll failed for room ${account.roomId}:`, error.message);
+        }
       }
+    } finally {
+      polling = false;
     }
-  }, Math.max(5, seconds) * 1000);
+  }, Math.max(60, seconds) * 1000);
 }
 
 async function pollRoomImapById(roomId) {

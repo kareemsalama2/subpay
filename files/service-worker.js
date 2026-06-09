@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subpay-pwa-v5';
+const CACHE_NAME = 'subpay-pwa-v6';
 const APP_SHELL = [
   '/',
   '/index.html',

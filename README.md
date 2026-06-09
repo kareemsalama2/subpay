@@ -50,3 +50,12 @@ http://localhost:8080
 ## Deploy
 
 Use Render or Koyeb for the current Node/PWA app. Configure production secrets only in the hosting dashboard, never in the public repo.
+
+For Railway, add a persistent Volume and set:
+
+```text
+DATA_PATH=/data/db.json
+IMAP_POLL_INTERVAL_SECONDS=60
+```
+
+Without a persistent Volume, registered users and rooms can disappear after a restart or redeploy because the app stores its JSON database on disk.
