@@ -545,9 +545,16 @@ function serveStatic(req, res, urlPath) {
     ".ico": "image/x-icon",
     ".webmanifest": "application/manifest+json; charset=utf-8"
   };
-  res.writeHead(200, {
+  const headers = {
     "Content-Type": types[ext] || "application/octet-stream",
-    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=3600"
-  });
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+  };
+  if (requested === "/service-worker.js") {
+    headers["Service-Worker-Allowed"] = "/";
+    headers["Clear-Site-Data"] = "\"cache\"";
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(filePath).pipe(res);
 }

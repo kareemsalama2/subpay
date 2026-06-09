@@ -1646,9 +1646,11 @@ if (document.readyState === 'loading') {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch((error) => {
-      console.warn('Service worker registration failed:', error.message);
-    });
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => registration.update().catch(() => {}))
+      .catch((error) => {
+        console.warn('Service worker registration failed:', error.message);
+      });
   });
 }
 

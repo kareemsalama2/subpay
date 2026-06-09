@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subpay-pwa-v10';
+const CACHE_NAME = 'subpay-pwa-v11';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -11,7 +11,9 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => caches.open(CACHE_NAME))
       .then((cache) => cache.addAll(APP_SHELL))
       .then(() => self.skipWaiting())
   );
@@ -33,7 +35,7 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request)
       .then((response) => {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
         return response;
       })
       .catch(() => {
